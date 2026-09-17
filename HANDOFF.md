@@ -2,6 +2,9 @@
 
 Release target: **0.3.0**
 
+The dependency publication train is complete; TypeSafe remains unpublished and
+untagged by maintainer request. See the latest closure below.
+
 Target-host QC was executed on 2026-09-17 after this source-overlay handoff.
 See the closure record appended below and `VERIFICATION.md`; the original
 container limitations below are historical.
@@ -282,3 +285,30 @@ The release train is HTTP 0.2.0 (`execution_plane_http-v0.2.0`), Pristine 0.4.0
 published 0.3.0. Fully Hex-resolved CI, real lock entries and the publish dry run
 follow dependency publication; the source checks do not substitute for those
 publish-train steps. No publication or tags were performed.
+
+
+## Published-dependency closure — 2026-09-17
+
+The dependency train is complete:
+
+- `execution_plane_http 0.2.0` and docs published; tag
+  `execution_plane_http-v0.2.0` pushed at `63b69ff3984f6f8440866e96a16ceee3ad73bf41`.
+- `pristine 0.4.0` and docs published; tag `pristine-v0.4.0` pushed at
+  `04ba7b1` after locking published HTTP 0.2.0 and passing 347 runtime tests,
+  formatting, compilation, Credo, Dialyzer, docs and the full publish dry run.
+
+TypeSafe now locks both actual Hex releases. With the maintenance-tools-only
+bootstrap (no runtime source substitution), the complete `scripts/check_handoff.sh`,
+final `mix ci` and `mix hex.publish --dry-run --yes` passed. Live tests passed:
+1 doctest + 123 tests, zero failures. A fresh production consumer of the unpacked
+TypeSafe artifact resolved every runtime dependency from Hex and passed compile,
+live model listing/evaluation, fingerprint metadata and cancellation checks on
+Elixir 1.19.5 / OTP 28.3.1. No source or generated changes were needed.
+
+Normal GitHub CI must be green for the final pushed commit before publication;
+use the push-triggered `ci.yml` run, with no source-ref inputs. The earlier
+source-mode matrix below is historical preparation evidence.
+
+**TypeSafeSDK 0.3.0 is intentionally not published or tagged.** The maintainer
+requested a pause at the publish-ready handoff. Its future tag is `v0.3.0`.
+See `PUBLISHING.md` for the remaining TypeSafe-only actions.

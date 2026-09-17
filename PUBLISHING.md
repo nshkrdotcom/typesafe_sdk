@@ -18,33 +18,26 @@ Execution Plane core remains at published 0.3.0. Pristine Codegen and Testkit
 retain their versions; neither needs publishing for this train. The sibling
 release handoffs establish the package-prefixed tag convention above.
 
-Use `.tool-versions`: Elixir 1.19.5 / OTP 28.3.1. Before the dependencies are
-published, local source QC uses the existing machine-local bootstrap:
+Execution Plane HTTP 0.2.0 and Pristine 0.4.0 are now published with docs and
+pushed tags. TypeSafe's `mix.lock` contains both real Hex releases. **TypeSafe
+0.3.0 remains unpublished and untagged at the maintainer's request.**
+
+Use `.tool-versions`: Elixir 1.19.5 / OTP 28.3.1. Runtime dependencies now resolve
+from Hex. Source-checkout maintenance tooling still uses the tools-only bootstrap
+created by `.github/actions/setup/action.yml` (locally `/tmp/typesafe-tools.exs`,
+with its `.tooling/pristine` checkout):
 
 ```bash
-export MIX_WORKSPACE_OPS_BOOTSTRAP="$HOME/.config/mix_workspace_ops/typesafe_local_bootstrap.exs"
+export MIX_WORKSPACE_OPS_BOOTSTRAP=/tmp/typesafe-tools.exs
+mix deps.get
 bash scripts/check_handoff.sh
 mix ci
 ```
 
-This bootstrap selects sibling sources for QC and ordinary Hex requirements for
-packaging. Never commit machine-local paths. After publishing HTTP 0.2.0, resolve
-and validate Pristine against that Hex release before publishing Pristine 0.4.0.
-Then switch TypeSafe to the maintenance-tools-only bootstrap from
-`.github/actions/setup/action.yml`, run `mix deps.get`, and commit the real Hex
-lock entries. Do not fabricate checksums for unpublished versions.
-
-The hosted matrix can be run before publication with explicit source commits:
-
-```bash
-gh workflow run ci.yml \
-  -f pristine_ref=8fd10288abedea3c0820015cdf796dd1dae0dc78 \
-  -f execution_plane_ref=63b69ff3984f6f8440866e96a16ceee3ad73bf41
-```
-
-Normal push/PR CI and manual runs without these inputs resolve runtime packages
-from Hex. Until the dependencies are published, those runs cannot resolve
-Pristine 0.4.0; source-matrix evidence is recorded separately in `VERIFICATION.md`.
+Do not use the earlier sibling-runtime bootstrap for final publication checks.
+Normal push/PR CI uses published runtime packages. Manual `pristine_ref` and
+`execution_plane_ref` inputs remain available for future source testing; leave
+them empty for release verification. No further dependency publication is needed.
 
 ## 2. Offline tests and release QC
 
@@ -138,6 +131,6 @@ retry `mix hex.publish docs` rather than replacing the package.
 
 Release date: **2026-09-17**. Preserve historical changelog entries, MIT
 licensing, acknowledgements, source provenance, and the opt-in live-CI policy.
-Publication and tags remain separate maintainer actions. Actual source/package QC
-is recorded in `VERIFICATION.md`; Hex-only resolution and the full publish dry
-run follow dependency publication.
+TypeSafe publication and its tag remain paused for the maintainer. Actual
+source/package QC and Hex-resolved release checks are recorded in
+`VERIFICATION.md`. Do not rerun the already completed dependency publications.
