@@ -26,7 +26,7 @@ runs:
       uses: actions/checkout@v4
       with:
         repository: nshkrdotcom/pristine
-        ref: fb117e55f2c11ba7466481478ad08f79492dc58f
+        ref: 04ba7b112413591f5cb9260f1d270bbbeb8a0630
         path: .tooling/pristine
         persist-credentials: false
     - name: Check out prerelease Pristine runtime

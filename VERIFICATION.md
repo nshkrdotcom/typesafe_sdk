@@ -22,6 +22,10 @@ TypeSafe artifact resolved every runtime dependency from Hex and passed compile,
 live model listing/evaluation, fingerprint metadata and cancellation checks on
 Elixir 1.19.5 / OTP 28.3.1. No source or generated changes were needed.
 
+The maintenance-tool checkout is pinned to Pristine release commit
+`04ba7b112413591f5cb9260f1d270bbbeb8a0630`; the earlier pin required Pristine
+0.3.1 and blocked Hex resolution. This update does not substitute runtime sources.
+
 Normal GitHub CI must be green for the final pushed commit before publication;
 use the push-triggered `ci.yml` run, with no source-ref inputs. The earlier
 source-mode matrix below is historical preparation evidence.
