@@ -1,6 +1,6 @@
-# Publish TypeSafeSDK 0.1.1
+# Publish TypeSafeSDK 0.1.2
 
-This is an SDK documentation/example patch release. Pristine 0.3.0 and
+This is an SDK documentation patch release. Pristine 0.3.0 and
 Execution Plane HTTP 0.1.0 are existing prerequisites; do not republish them.
 
 From the source checkout, build the distribution, then publish from it so local
@@ -10,7 +10,7 @@ generation tooling is excluded:
 unset MIX_WORKSPACE_OPS_BOOTSTRAP MIX_WORKSPACE_OPS_OVERLAY
 cd ~/p/g/n/typesafe_sdk
 mix hex.build --unpack
-cd typesafe_sdk-0.1.1
+cd typesafe_sdk-0.1.2
 mix deps.get && mix hex.publish
 ```
 

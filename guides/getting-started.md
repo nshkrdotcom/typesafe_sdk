@@ -5,7 +5,7 @@
 Add the SDK to your application's `mix.exs` dependencies:
 
 ```elixir
-{:typesafe_sdk, "~> 0.1.1"}
+{:typesafe_sdk, "~> 0.1.2"}
 ```
 
 Run `mix deps.get`. Pristine is installed as a runtime dependency automatically.

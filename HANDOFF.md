@@ -1,19 +1,26 @@
 # TypeSafeSDK handoff
 
-## Current release: 0.1.1
+## Current release: 0.1.2
 
-Documentation/example patch over 0.1.0. Includes the live evaluation script in
+Documentation patch over 0.1.1. Overhauls and expands `README.md` with a comprehensive
+guide to TypeSafe AI concepts, the System One decision model (`jev-latest`), typed
+question primitives (`Noul`, `Choice`, `Score`), BEAM concurrency patterns,
+and runtime configuration. Runtime behavior and generated API source are unchanged.
+
+Validation: formatting, compilation with warnings as errors, tests, Dialyzer, Credo strict,
+documentation with warnings as errors, verification task, and Hex package build. The
+unpacked distribution resolves published Hex dependencies and builds its docs without
+checkout-only generation tooling.
+
+Follow the 0.1.2 commands at the top of `PUBLISHING.md`. Only the SDK needs
+publishing; no Pristine or Execution Plane release is required.
+
+## Historical 0.1.1 handoff
+
+Documentation/example patch over 0.1.0. Included the live evaluation script in
 the package, a guide index, grouped guide/API navigation, and the MIT License
 page. Installation, configuration, question, response, and maintenance guides
-are updated. Runtime behavior and generated API source are unchanged.
-
-Validation: formatting, documentation with warnings as errors, and Hex package
-build. The unpacked distribution resolves published Hex dependencies and builds
-its docs without checkout-only generation tooling. The live example was already
-verified against both API operations before this documentation update.
-
-Follow the 0.1.1 commands at the top of `PUBLISHING.md`. Only the SDK needs
-publishing; no Pristine or Execution Plane release is required.
+were updated.
 
 ## Historical 0.1.0 handoff
 

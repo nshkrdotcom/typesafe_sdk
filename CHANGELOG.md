@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.2 - 2026-09-16
+
+### Improved
+
+- Expanded README with comprehensive System One decision model guides, typed question
+  workflows, and SDK architecture documentation.
+
 ## 0.1.1 - 2026-09-16
 
 ### Added

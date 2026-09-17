@@ -619,7 +619,7 @@ Add the dependency to your application's `mix.exs`:
 ```elixir
 def deps do
   [
-    {:typesafe_sdk, "~> 0.1.1"}
+    {:typesafe_sdk, "~> 0.1.2"}
   ]
 end
 ```
@@ -630,7 +630,7 @@ Then:
 mix deps.get
 ```
 
-Both TypeSafeSDK 0.1.1 and Pristine 0.3.0 are published on Hex, and this dependency combination resolves in a clean host project. Pristine `~> 0.3.0` is required; do not downgrade it to 0.2.x. Source-checkout maintenance tools need the contributor setup below.
+Both TypeSafeSDK 0.1.2 and Pristine 0.3.0 are published on Hex, and this dependency combination resolves in a clean host project. Pristine `~> 0.3.0` is required; do not downgrade it to 0.2.x. Source-checkout maintenance tools need the contributor setup below.
 
 Get an API key from the [TypeSafe dashboard](https://console.typesafe.ai), following the [official quick start](https://docs.typesafe.ai/introduction/quickstart). Set `TYPESAFE_API_KEY` in your environment, then configure it in your host application's `config/runtime.exs`:
 
