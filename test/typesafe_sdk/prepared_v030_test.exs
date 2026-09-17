@@ -2,6 +2,7 @@ defmodule TypeSafeSDK.PreparedV030Test do
   use ExUnit.Case, async: true
 
   alias TypeSafeSDK.{Error, Prepared}
+  alias TypeSafeSDK.Question.Noul
 
   defp q(label), do: TypeSafeSDK.noul(label)
 
@@ -33,9 +34,9 @@ defmodule TypeSafeSDK.PreparedV030Test do
   end
 
   test "fingerprint is versioned, stable, semantic, and recomputed by composition" do
-    one = TypeSafeSDK.prepare!(q: TypeSafeSDK.choice("Pick", [a: "A", b: "B"]))
-    two = TypeSafeSDK.prepare!(q: TypeSafeSDK.choice("Pick", [a: "A", b: "B"]))
-    reversed = TypeSafeSDK.prepare!(q: TypeSafeSDK.choice("Pick", [b: "B", a: "A"]))
+    one = TypeSafeSDK.prepare!(q: TypeSafeSDK.choice("Pick", a: "A", b: "B"))
+    two = TypeSafeSDK.prepare!(q: TypeSafeSDK.choice("Pick", a: "A", b: "B"))
+    reversed = TypeSafeSDK.prepare!(q: TypeSafeSDK.choice("Pick", b: "B", a: "A"))
 
     assert "typesafe-prepared-v1:" <> digest = Prepared.fingerprint(one)
     assert byte_size(digest) == 64
@@ -61,13 +62,15 @@ defmodule TypeSafeSDK.PreparedV030Test do
   end
 
   test "map-valued extras fingerprint independently of map iteration order" do
-    q1 = TypeSafeSDK.Question.Noul.new!("Q?", extra: %{"z" => 1, "a" => %{"y" => 2, "x" => 1}})
-    q2 = TypeSafeSDK.Question.Noul.new!("Q?", extra: %{"a" => %{"x" => 1, "y" => 2}, "z" => 1})
-    assert Prepared.fingerprint(TypeSafeSDK.prepare!(q: q1)) == Prepared.fingerprint(TypeSafeSDK.prepare!(q: q2))
+    q1 = Noul.new!("Q?", extra: %{"z" => 1, "a" => %{"y" => 2, "x" => 1}})
+    q2 = Noul.new!("Q?", extra: %{"a" => %{"x" => 1, "y" => 2}, "z" => 1})
+
+    assert Prepared.fingerprint(TypeSafeSDK.prepare!(q: q1)) ==
+             Prepared.fingerprint(TypeSafeSDK.prepare!(q: q2))
   end
 
   test "composition rejects invalid caller keys through the normal error surface" do
-    prepared = Prepared.new!([a: TypeSafeSDK.noul("A?")])
+    prepared = Prepared.new!(a: TypeSafeSDK.noul("A?"))
 
     assert {:error, %Error{type: :invalid_request}} =
              Prepared.put(prepared, 123, TypeSafeSDK.noul("B?"))

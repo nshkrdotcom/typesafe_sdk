@@ -56,9 +56,8 @@ defmodule TypeSafeSDK.ResponseContract do
   @spec validate(SystemOneResponse.t(), Prepared.t(), t()) :: :ok | {:error, Error.t()}
   def validate(%SystemOneResponse{} = response, %Prepared{} = prepared, contract) do
     result =
-      with :ok <- validate_model(response.model, contract.allowed_models),
-           :ok <- validate_unknown_answers(response, prepared, contract.on_unknown_answer) do
-        :ok
+      with :ok <- validate_model(response.model, contract.allowed_models) do
+        validate_unknown_answers(response, prepared, contract.on_unknown_answer)
       end
 
     case result do
@@ -68,7 +67,9 @@ defmodule TypeSafeSDK.ResponseContract do
   end
 
   defp merge_map(client_default, value) when is_list(value) do
-    if Keyword.keyword?(value), do: merge_map(client_default, Map.new(value)), else: invalid("must be a keyword list")
+    if Keyword.keyword?(value),
+      do: merge_map(client_default, Map.new(value)),
+      else: invalid("must be a keyword list")
   end
 
   defp merge_map(client_default, value) when is_map(value) do
@@ -90,14 +91,20 @@ defmodule TypeSafeSDK.ResponseContract do
 
   defp allowed_models(_), do: invalid("allowed_models must be nil or a list of model IDs")
 
-  defp valid_model?(model), do: is_binary(model) and String.valid?(model) and String.trim(model) != ""
+  defp valid_model?(model),
+    do: is_binary(model) and String.valid?(model) and String.trim(model) != ""
 
   defp validate_model(_model, nil), do: :ok
 
   defp validate_model(model, allowed) when is_binary(model) do
     if model in allowed,
       do: :ok,
-      else: {:error, Error.response_contract(:model_not_allowed, %{model: bounded(model), allowed_model_count: length(allowed)})}
+      else:
+        {:error,
+         Error.response_contract(:model_not_allowed, %{
+           model: bounded(model),
+           allowed_model_count: length(allowed)
+         })}
   end
 
   defp validate_model(_model, allowed),

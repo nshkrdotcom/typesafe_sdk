@@ -5,6 +5,15 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      pristine_ref:
+        description: Optional Pristine commit for pre-publication source QC
+        type: string
+        default: ''
+      execution_plane_ref:
+        description: Optional Execution Plane commit for pre-publication HTTP source QC
+        type: string
+        default: ''
 
 permissions:
   contents: read
@@ -32,6 +41,8 @@ jobs:
         with:
           elixir: ${{ matrix.elixir }}
           otp: ${{ matrix.otp }}
+          pristine_ref: ${{ inputs.pristine_ref }}
+          execution_plane_ref: ${{ inputs.execution_plane_ref }}
       - run: mix typesafe.prereq
       - run: mix compile --warnings-as-errors
       - run: mix test --warnings-as-errors
@@ -49,6 +60,8 @@ jobs:
         with:
           elixir: '1.19.5'
           otp: '28.3.1'
+          pristine_ref: ${{ inputs.pristine_ref }}
+          execution_plane_ref: ${{ inputs.execution_plane_ref }}
       - run: mix typesafe.prereq
       - run: mix format --check-formatted
       - run: mix compile --warnings-as-errors

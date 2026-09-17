@@ -20,9 +20,14 @@ defmodule TypeSafeSDK.Models do
     matches = models |> catalog() |> Enum.filter(&(&1.name == identifier))
 
     case matches do
-      [model] -> {:ok, model}
-      [] -> {:error, Error.model_lookup(:model_not_found, identifier)}
-      many -> {:error, Error.model_lookup(:ambiguous_model, identifier, %{match_count: length(many)})}
+      [model] ->
+        {:ok, model}
+
+      [] ->
+        {:error, Error.model_lookup(:model_not_found, identifier)}
+
+      many ->
+        {:error, Error.model_lookup(:ambiguous_model, identifier, %{match_count: length(many)})}
     end
   end
 
@@ -50,9 +55,8 @@ defmodule TypeSafeSDK.Models do
   def latest(models, selector) do
     selected = models |> catalog() |> select(selector)
 
-    with {:ok, dated} <- objective_dates(selected),
-         {:ok, model} <- unique_latest(dated) do
-      {:ok, model}
+    with {:ok, dated} <- objective_dates(selected) do
+      unique_latest(dated)
     end
   end
 
@@ -61,7 +65,10 @@ defmodule TypeSafeSDK.Models do
   defp catalog(_), do: []
 
   defp select(models, :all), do: models
-  defp select(models, identifier) when is_binary(identifier), do: Enum.filter(models, &(&1.name == identifier))
+
+  defp select(models, identifier) when is_binary(identifier),
+    do: Enum.filter(models, &(&1.name == identifier))
+
   defp select(models, fun) when is_function(fun, 1), do: Enum.filter(models, fun)
 
   defp select(models, selector) when is_list(selector) do
@@ -72,9 +79,7 @@ defmodule TypeSafeSDK.Models do
     allowed = Map.take(selector, [:name, :description, :release_date])
 
     if map_size(allowed) == map_size(selector) do
-      Enum.filter(models, fn model ->
-        Enum.all?(allowed, fn {key, value} -> Map.get(model, key) == value end)
-      end)
+      Enum.filter(models, &matches_fields?(&1, allowed))
     else
       []
     end
@@ -82,24 +87,26 @@ defmodule TypeSafeSDK.Models do
 
   defp select(_models, _selector), do: []
 
+  defp matches_fields?(model, fields) do
+    Enum.all?(fields, fn {key, value} -> Map.get(model, key) == value end)
+  end
+
   defp objective_dates([]), do: {:error, Error.model_lookup(:model_not_found, "<selector>")}
 
   defp objective_dates(models) do
     Enum.reduce_while(models, {:ok, []}, fn model, {:ok, acc} ->
-      case model.release_date do
-        release_date when is_binary(release_date) ->
-          case Date.from_iso8601(release_date) do
-            {:ok, date} -> {:cont, {:ok, [{date, model} | acc]}}
+      case parse_release_date(model.release_date) do
+        {:ok, date} ->
+          {:cont, {:ok, [{date, model} | acc]}}
 
-            {:error, _} ->
-              {:halt, {:error, Error.unordered_model_catalog(%{reason: :invalid_release_date})}}
-          end
-
-        _other ->
+        {:error, _} ->
           {:halt, {:error, Error.unordered_model_catalog(%{reason: :invalid_release_date})}}
       end
     end)
   end
+
+  defp parse_release_date(value) when is_binary(value), do: Date.from_iso8601(value)
+  defp parse_release_date(_), do: {:error, :invalid_release_date}
 
   defp unique_latest(dated) do
     latest_date =
@@ -108,11 +115,15 @@ defmodule TypeSafeSDK.Models do
       |> Enum.reduce(fn date, latest ->
         if Date.compare(date, latest) == :gt, do: date, else: latest
       end)
+
     latest = Enum.filter(dated, fn {date, _model} -> Date.compare(date, latest_date) == :eq end)
 
     case latest do
-      [{_date, model}] -> {:ok, model}
-      _ -> {:error, Error.unordered_model_catalog(%{reason: :release_date_tie, count: length(latest)})}
+      [{_date, model}] ->
+        {:ok, model}
+
+      _ ->
+        {:error, Error.unordered_model_catalog(%{reason: :release_date_tie, count: length(latest)})}
     end
   end
 end

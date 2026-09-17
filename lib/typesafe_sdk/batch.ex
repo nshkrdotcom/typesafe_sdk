@@ -115,7 +115,8 @@ defmodule TypeSafeSDK.Batch do
 
   defp cancellation_aware(stream, nil), do: stream
 
-  defp cancellation_aware(stream, %Pristine.Cancellation{} = cancellation) do
+  defp cancellation_aware(stream, cancellation) do
+    {:ok, cancellation} = Pristine.Cancellation.validate(cancellation)
     Stream.take_while(stream, fn _item -> not Pristine.Cancellation.cancelled?(cancellation) end)
   end
 

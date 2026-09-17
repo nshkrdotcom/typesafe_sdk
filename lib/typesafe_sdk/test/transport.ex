@@ -30,7 +30,9 @@ defmodule TypeSafeSDK.Test.Transport do
   end
 
   @impl true
-  def send_cancelable(request, context, %Cancellation{} = cancellation) do
+  def send_cancelable(request, context, cancellation) do
+    {:ok, cancellation} = Cancellation.validate(cancellation)
+
     if Cancellation.cancelled?(cancellation) do
       {:error, Pristine.Error.cancelled_error()}
     else
@@ -38,7 +40,7 @@ defmodule TypeSafeSDK.Test.Transport do
 
       {worker, monitor} =
         spawn_monitor(fn ->
-          result = send(request, context)
+          result = __MODULE__.send(request, context)
           Kernel.send(parent, {:typesafe_test_transport_result, self(), result})
         end)
 

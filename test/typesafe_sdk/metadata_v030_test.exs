@@ -4,7 +4,7 @@ defmodule TypeSafeSDK.MetadataV030Test do
   alias TypeSafeSDK.{Error, Response, Test}
 
   test "response metadata exposes stable structural data and prepared fingerprint" do
-    client = Test.client() |> Test.stub(q: {:noul, 0.9}, model: "model-a")
+    client = Test.client() |> Test.stub([q: {:noul, 0.9}], model: "model-a")
     prepared = TypeSafeSDK.prepare!(q: TypeSafeSDK.noul("Q?"))
     assert {:ok, response} = TypeSafeSDK.evaluate(client, "state", prepared)
 

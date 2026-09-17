@@ -48,7 +48,9 @@ defmodule Mix.Tasks.Typesafe.Prereq do
 
     for capability <- [:unary_cancellation, :cancellation_cleanup] do
       unless get_in(report, [:capabilities, capability, :status]) == :supported do
-        Mix.raise("Pristine prerequisite missing: #{capability} is not verified by the default transport")
+        Mix.raise(
+          "Pristine prerequisite missing: #{capability} is not verified by the default transport"
+        )
       end
     end
   end

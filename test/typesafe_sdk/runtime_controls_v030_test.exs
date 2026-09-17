@@ -38,8 +38,10 @@ defmodule TypeSafeSDK.RuntimeControlsV030Test do
 
   test "retry overrides inherit omitted client fields and explicit false disables retries" do
     base = RetryPolicy.new!(max_retries: 5, backoff_initial: 0.75, backoff_max: 9.0)
+
     assert %RetryPolicy{max_retries: 1, backoff_initial: 0.75, backoff_max: 9.0} =
              RetryPolicy.merge!(base, max_retries: 1)
+
     assert false == RetryPolicy.merge!(base, false)
   end
 
@@ -48,14 +50,17 @@ defmodule TypeSafeSDK.RuntimeControlsV030Test do
     exact = payload |> Jason.encode_to_iodata!() |> IO.iodata_length()
 
     assert :ok = RequestBudget.check(payload, exact)
+
     assert {:error, %Error{type: :request_too_large, details: %{actual_bytes: ^exact}}} =
              RequestBudget.check(payload, exact - 1)
   end
 
   test "request byte budget rejects before transport egress and counts UTF-8 serialized bytes" do
     client = Test.client(max_request_bytes: 1)
+
     assert {:error, %Error{type: :request_too_large} = error} =
              TypeSafeSDK.evaluate(client, "é", questions())
+
     assert error.details.actual_bytes > 1
     assert error.details.max_bytes == 1
     assert Test.requests(client) == []
@@ -93,9 +98,7 @@ defmodule TypeSafeSDK.RuntimeControlsV030Test do
       ])
 
     assert {:error, %Error{status: 500}} =
-             TypeSafeSDK.evaluate(client, "state", questions(),
-               retry: [backoff_initial: 0.0]
-             )
+             TypeSafeSDK.evaluate(client, "state", questions(), retry: [backoff_initial: 0.0])
 
     assert Test.stats(client).total == 1
   end
@@ -107,6 +110,7 @@ defmodule TypeSafeSDK.RuntimeControlsV030Test do
 
     assert {:error, %Error{type: :cancelled, cause: %Pristine.Error{type: :cancelled}}} =
              TypeSafeSDK.evaluate(client, "state", questions(), cancellation: token)
+
     assert Test.requests(client) == []
   end
 
@@ -119,18 +123,20 @@ defmodule TypeSafeSDK.RuntimeControlsV030Test do
       |> Test.stub_callback(fn request ->
         state = request.body |> IO.iodata_to_binary() |> Jason.decode!() |> Map.fetch!("state")
         send(owner, {:entered, state, self()})
+
         receive do
           :release -> {:answers, [q: {:noul, 0.9}]}
         end
       end)
 
-    consumer = Task.async(fn ->
-      TypeSafeSDK.evaluate_many(client, 0..20, questions(),
-        cancellation: token,
-        max_concurrency: 1,
-        ordered: false
-      )
-    end)
+    consumer =
+      Task.async(fn ->
+        TypeSafeSDK.evaluate_many(client, 0..20, questions(),
+          cancellation: token,
+          max_concurrency: 1,
+          ordered: false
+        )
+      end)
 
     assert_receive {:entered, 0, worker}, 1000
     worker_ref = Process.monitor(worker)

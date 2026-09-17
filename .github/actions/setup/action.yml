@@ -7,6 +7,14 @@ inputs:
   otp:
     required: true
     description: OTP version
+  pristine_ref:
+    required: false
+    default: ''
+    description: Optional Pristine runtime source commit; empty uses Hex
+  execution_plane_ref:
+    required: false
+    default: ''
+    description: Optional Execution Plane HTTP source commit; empty uses Hex
 runs:
   using: composite
   steps:
@@ -21,6 +29,22 @@ runs:
         ref: fb117e55f2c11ba7466481478ad08f79492dc58f
         path: .tooling/pristine
         persist-credentials: false
+    - name: Check out prerelease Pristine runtime
+      if: inputs.pristine_ref != ''
+      uses: actions/checkout@v4
+      with:
+        repository: nshkrdotcom/pristine
+        ref: ${{ inputs.pristine_ref }}
+        path: .tooling/pristine-runtime
+        persist-credentials: false
+    - name: Check out prerelease Execution Plane HTTP
+      if: inputs.execution_plane_ref != ''
+      uses: actions/checkout@v4
+      with:
+        repository: nshkrdotcom/execution_plane
+        ref: ${{ inputs.execution_plane_ref }}
+        path: .tooling/execution-plane
+        persist-credentials: false
     - name: Select maintenance tool sources
       shell: bash
       run: |
@@ -29,9 +53,22 @@ runs:
           @tools_root Path.join(System.fetch_env!("GITHUB_WORKSPACE"), ".tooling/pristine/apps")
           def dep(committed, project_root) do
             app = elem(committed, 0)
-            if app in [:pristine_codegen, :pristine_provider_testkit] do
+            root = Path.dirname(@tools_root)
+            source =
+              cond do
+                app in [:pristine_codegen, :pristine_provider_testkit] ->
+                  Path.join(@tools_root, Atom.to_string(app))
+                app == :pristine ->
+                  Path.join(root, "../pristine-runtime/apps/pristine_runtime")
+                app == :execution_plane_http ->
+                  Path.join(root, "../execution-plane/protocols/execution_plane_http")
+                true -> nil
+              end
+
+            packaging? = Enum.any?(System.argv(), &(&1 in ["hex.build", "hex.publish"]))
+            if source && File.dir?(source) && not packaging? do
               opts = if tuple_size(committed) == 3, do: elem(committed, 2), else: []
-              path = Path.relative_to(Path.join(@tools_root, Atom.to_string(app)), project_root, force: true)
+              path = Path.relative_to(source, project_root, force: true)
               {app, Keyword.merge(opts, path: path, override: true)}
             else
               committed

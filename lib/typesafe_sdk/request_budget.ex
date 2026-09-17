@@ -31,6 +31,9 @@ defmodule TypeSafeSDK.RequestBudget do
     end
   rescue
     error in Jason.EncodeError ->
-      {:error, Error.invalid_request(["request"], "request is not JSON-serializable", %{kind: error.__struct__})}
+      {:error,
+       Error.invalid_request(["request"], "request is not JSON-serializable", %{
+         kind: error.__struct__
+       })}
   end
 end

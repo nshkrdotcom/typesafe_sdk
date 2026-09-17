@@ -112,7 +112,10 @@ defmodule TypeSafeSDK.Prepared do
   def delete(%__MODULE__{} = prepared, key)
       when is_binary(key) or (is_atom(key) and not is_nil(key)) do
     wire_key = JSON.wire_key(key)
-    new(Enum.reject(prepared.questions, fn {existing, _} -> JSON.wire_key(existing) == wire_key end))
+
+    new(
+      Enum.reject(prepared.questions, fn {existing, _} -> JSON.wire_key(existing) == wire_key end)
+    )
   end
 
   def delete(%__MODULE__{}, _key),
@@ -134,20 +137,21 @@ defmodule TypeSafeSDK.Prepared do
   @doc "Right-biased merge preserving duplicate positions from the left."
   @spec merge(t(), t()) :: {:ok, t()} | {:error, Error.t()}
   def merge(%__MODULE__{} = left, %__MODULE__{} = right) do
-    merged =
-      Enum.reduce(right.questions, left.questions, fn {right_key, right_question}, acc ->
-        right_wire = JSON.wire_key(right_key)
+    right.questions
+    |> Enum.reduce(left.questions, &merge_question/2)
+    |> new()
+  end
 
-        case Enum.split_while(acc, fn {left_key, _} -> JSON.wire_key(left_key) != right_wire end) do
-          {before, [{left_key, _old} | after_pairs]} ->
-            before ++ [{left_key, right_question} | after_pairs]
+  defp merge_question({right_key, right_question}, acc) do
+    right_wire = JSON.wire_key(right_key)
 
-          {_before, []} ->
-            acc ++ [{right_key, right_question}]
-        end
-      end)
+    case Enum.split_while(acc, fn {left_key, _} -> JSON.wire_key(left_key) != right_wire end) do
+      {before, [{left_key, _old} | after_pairs]} ->
+        before ++ [{left_key, right_question} | after_pairs]
 
-    new(merged)
+      {_before, []} ->
+        acc ++ [{right_key, right_question}]
+    end
   end
 
   @doc false
@@ -222,10 +226,14 @@ defmodule TypeSafeSDK.Prepared do
 
         "noul" ->
           case Map.get(definition, :criteria) do
-            nil -> nil
+            nil ->
+              nil
+
             pairs ->
               pairs
-              |> Enum.map(fn {key, description} -> [JSON.wire_key(key), canonicalize(description)] end)
+              |> Enum.map(fn {key, description} ->
+                [JSON.wire_key(key), canonicalize(description)]
+              end)
               |> Enum.sort_by(&hd/1)
           end
 

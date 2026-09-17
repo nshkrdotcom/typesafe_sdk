@@ -10,7 +10,15 @@ defmodule TypeSafeSDK.Client do
   alias Pristine.Adapters.Auth.Bearer
   alias Pristine.Client, as: RuntimeClient
   alias Pristine.SDK.OpenAPI.Client, as: OpenAPIClient
-  alias TypeSafeSDK.{Constants, Error, ProviderProfile, RequestBudget, ResponseContract, RetryPolicy}
+
+  alias TypeSafeSDK.{
+    Constants,
+    Error,
+    ProviderProfile,
+    RequestBudget,
+    ResponseContract,
+    RetryPolicy
+  }
 
   @protected_headers MapSet.new([
                        "authorization",
@@ -28,7 +36,10 @@ defmodule TypeSafeSDK.Client do
           default_model: String.t(),
           timeout_ms: pos_integer(),
           retry: RetryPolicy.t() | false,
-          response_contract: ResponseContract.t(),
+          response_contract: %{
+            required(:on_unknown_answer) => :preserve | :error,
+            required(:allowed_models) => [String.t()] | nil
+          },
           max_request_bytes: pos_integer() | nil,
           headers: map(),
           transport: module(),

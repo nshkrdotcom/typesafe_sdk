@@ -220,7 +220,7 @@ defmodule TypeSafeSDK.MixProject do
         "typesafe.prereq",
         "format --check-formatted",
         "compile --warnings-as-errors",
-        "test",
+        "cmd env MIX_ENV=test mix test --warnings-as-errors",
         "credo --strict",
         "dialyzer",
         "docs --warnings-as-errors",

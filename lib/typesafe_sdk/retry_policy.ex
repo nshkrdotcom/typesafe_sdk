@@ -120,7 +120,8 @@ defmodule TypeSafeSDK.RetryPolicy do
         {:error, TypeSafeSDK.Error.configuration("retry override must be a keyword list")}
 
       length(Keyword.keys(attrs)) != length(Enum.uniq(Keyword.keys(attrs))) ->
-        {:error, TypeSafeSDK.Error.configuration("duplicate retry override options are not allowed")}
+        {:error,
+         TypeSafeSDK.Error.configuration("duplicate retry override options are not allowed")}
 
       true ->
         {:ok, Map.new(attrs)}
