@@ -2,13 +2,14 @@ defmodule TypeSafeSDK.Question do
   @moduledoc "Question validation and legacy wire normalization. Strict evaluation uses `TypeSafeSDK.Prepared`."
 
   alias TypeSafeSDK.{Choice, Error, Noul, Score}
+  alias TypeSafeSDK.Question.Validation
 
   @type t :: Noul.t() | Choice.t() | Score.t() | map()
 
   @doc "Validates one question with strict semantic rules, without sending HTTP."
   @spec validate(term()) :: :ok | {:error, Error.t()}
   def validate(question) do
-    case TypeSafeSDK.Question.Validation.compile(question, []) do
+    case Validation.compile(question, []) do
       {:ok, _} -> :ok
       error -> error
     end

@@ -8,6 +8,7 @@ defmodule TypeSafeSDK.ReleaseConsistencyTest do
     changelog = File.read!("CHANGELOG.md")
     assert changelog =~ "## 0.2.0 - 2026-09-16"
     assert File.read!("README.md") =~ ~s({:typesafe_sdk, "~> 0.2.0"})
+
     for path <- Path.wildcard("priv/json_schema/*.json") do
       assert Jason.decode!(File.read!(path))["x-typesafe-sdk-version"] == "0.2.0"
     end
@@ -24,12 +25,21 @@ defmodule TypeSafeSDK.ReleaseConsistencyTest do
 
   test "all registered documentation and package assets exist in the checkout" do
     docs = Mix.Project.config()[:docs]
+
     for entry <- docs[:extras] do
       path = if is_tuple(entry), do: elem(entry, 0), else: entry
       assert File.regular?(path), "missing documentation: #{path}"
     end
-    for path <- ["LICENSE", "assets/typesafe_sdk.svg", "guides", "cheatsheets",
-      "priv/json_schema", "examples/evaluation", "docs/implementation/0.2.0"] do
+
+    for path <- [
+          "LICENSE",
+          "assets/typesafe_sdk.svg",
+          "guides",
+          "cheatsheets",
+          "priv/json_schema",
+          "examples/evaluation",
+          "docs/implementation/0.2.0"
+        ] do
       assert File.exists?(path), "missing package asset: #{path}"
     end
   end

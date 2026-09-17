@@ -1,5 +1,18 @@
 # TypeSafeSDK 0.2.0 implementation handoff
 
+## Native QC status
+
+The overlay has now been compiled and exercised on Elixir 1.19.5 / OTP 28.3.1.
+The complete non-regenerating handoff script passes, including strict Credo,
+Dialyzer, warning-free compilation/ExDoc, schema/codegen verification and Hex build.
+Live tests pass: **1 doctest, 98 tests, zero failures**. Real recording and the
+12-record development / eight-record held-out evaluation workflow also passed.
+See [VERIFICATION.md](VERIFICATION.md) for corrections and execution details.
+
+Compatibility CI is pending the release-fix push. Publication has not occurred.
+The earlier delivery-environment limitations below describe the original overlay,
+not the native QC performed in this checkout.
+
 Release date: **2026-09-16**. Base: the **97 packed files in typesafe_sdk(2).xml**.
 Apply the overlay at that repository's root. It contains only new/modified paths;
 there are no deletions, vendored dependencies, BEAM binaries or fake live captures.

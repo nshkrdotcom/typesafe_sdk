@@ -10,29 +10,68 @@ defmodule TypeSafeSDK.Prepared do
   alias TypeSafeSDK.Question.Validation
   @enforce_keys [:encoded, :json, :definitions, :keys, :count]
   defstruct [:encoded, :json, :definitions, :keys, :count]
-  @opaque t :: %__MODULE__{encoded: struct(), json: binary(), definitions: map(), keys: map(), count: pos_integer()}
+
+  @type t :: %__MODULE__{
+          encoded: struct(),
+          json: binary(),
+          definitions: map(),
+          keys: map(),
+          count: pos_integer()
+        }
 
   @spec new(t() | map() | list()) :: {:ok, t()} | {:error, Error.t()}
   def new(%__MODULE__{} = prepared), do: {:ok, prepared}
+
   def new(questions) do
     with {:ok, pairs} <- JSON.keyed_pairs(questions, ["questions"]),
          :ok <- nonempty(pairs),
          {:ok, definitions} <- compile(pairs) do
-      wire = Enum.map(pairs, fn {key, _} -> {JSON.wire_key(key), definitions[JSON.wire_key(key)].wire} end)
+      wire =
+        Enum.map(pairs, fn {key, _} ->
+          {JSON.wire_key(key), definitions[JSON.wire_key(key)].wire}
+        end)
+
       json = wire |> Jason.OrderedObject.new() |> Jason.encode!()
-      {:ok, %__MODULE__{encoded: Jason.Fragment.new(json), json: json, definitions: definitions,
-        keys: Map.new(pairs, fn {key, _} -> {JSON.wire_key(key), key} end), count: length(pairs)}}
+
+      {:ok,
+       %__MODULE__{
+         encoded: Jason.Fragment.new(json),
+         json: json,
+         definitions: definitions,
+         keys: Map.new(pairs, fn {key, _} -> {JSON.wire_key(key), key} end),
+         count: length(pairs)
+       }}
     end
   end
 
   @spec new!(t() | map() | list()) :: t()
   def new!(questions), do: Validation.unwrap!(new(questions))
 
-  defp nonempty([]), do: {:error, Error.invalid_request(["questions"], "at least one question is required")}
+  @doc false
+  @spec encoded(t()) :: struct()
+  def encoded(%__MODULE__{encoded: value}), do: value
+
+  @doc false
+  @spec keys(t()) :: map()
+  def keys(%__MODULE__{keys: value}), do: value
+
+  @doc false
+  @spec definitions(t()) :: map()
+  def definitions(%__MODULE__{definitions: value}), do: value
+
+  @doc false
+  @spec count(t()) :: pos_integer()
+  def count(%__MODULE__{count: value}), do: value
+
+  defp nonempty([]),
+    do: {:error, Error.invalid_request(["questions"], "at least one question is required")}
+
   defp nonempty(_), do: :ok
+
   defp compile(pairs) do
     Enum.reduce_while(pairs, {:ok, %{}}, fn {key, question}, {:ok, acc} ->
       wire_key = JSON.wire_key(key)
+
       case Validation.compile(question, ["questions", wire_key]) do
         {:ok, definition} -> {:cont, {:ok, Map.put(acc, wire_key, definition)}}
         error -> {:halt, error}

@@ -6,6 +6,7 @@ defmodule TypeSafeSDK.Test.Transport do
   @impl true
   def send(request, context) do
     pid = Keyword.fetch!(context.transport_opts, :scenario)
+
     try do
       case Scenario.checkout(pid, request) do
         {:ok, fixture} -> Fixture.respond(fixture, request)

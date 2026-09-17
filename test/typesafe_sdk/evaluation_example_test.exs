@@ -10,7 +10,10 @@ defmodule TypeSafeSDK.EvaluationExampleTest do
     held = Eval.load!("examples/evaluation/datasets/held-out.jsonl", "held-out")
     assert MapSet.disjoint?(MapSet.new(dev, & &1["id"]), MapSet.new(held, & &1["id"]))
     assert Enum.any?(dev, &(length(&1["departments"]) > 1))
-    assert_raise ArgumentError, fn -> Eval.load!("examples/evaluation/datasets/held-out.jsonl", "development") end
+
+    assert_raise ArgumentError, fn ->
+      Eval.load!("examples/evaluation/datasets/held-out.jsonl", "development")
+    end
   end
 
   test "model correctness and policy correctness have distinct denominators" do
@@ -18,8 +21,15 @@ defmodule TypeSafeSDK.EvaluationExampleTest do
       record("one", "billing", ["billing"], ["billing"], 0.9, 0.1, 10),
       record("two", "technical", ["technical"], ["urgent"], 0.95, 0.1, 20),
       record("three", "sales", ["sales"], ["review"], 0.3, 0.1, 30),
-      %{"id" => "failed", "outcome" => "error", "departments" => ["technical"], "routes" => ["urgent"], "latency_ms" => 40}
+      %{
+        "id" => "failed",
+        "outcome" => "error",
+        "departments" => ["technical"],
+        "routes" => ["urgent"],
+        "latency_ms" => 40
+      }
     ]
+
     metrics = Eval.metrics(rows, @policy)
     assert metrics["model_accuracy"] == 1.0
     assert_in_delta metrics["policy_accuracy"], 2 / 3, 0.00001
@@ -49,10 +59,23 @@ defmodule TypeSafeSDK.EvaluationExampleTest do
   end
 
   test "the runnable example evaluates through the real SDK and excludes state from reports" do
-    client = TypeSafeSDK.Test.client() |> TypeSafeSDK.Test.stub(
-      department: {:choice, :billing, 0.9}, urgent: {:noul, 0.1})
-    rows = [%{"id" => "example", "split" => "development", "state" => "private-state",
-      "departments" => ["billing"], "routes" => ["billing"]}]
+    client =
+      TypeSafeSDK.Test.client()
+      |> TypeSafeSDK.Test.stub(
+        department: {:choice, :billing, 0.9},
+        urgent: {:noul, 0.1}
+      )
+
+    rows = [
+      %{
+        "id" => "example",
+        "split" => "development",
+        "state" => "private-state",
+        "departments" => ["billing"],
+        "routes" => ["billing"]
+      }
+    ]
+
     [record] = Eval.run(client, rows)
     assert record["department"] == "billing"
     refute Map.has_key?(record, "state")
@@ -61,19 +84,39 @@ defmodule TypeSafeSDK.EvaluationExampleTest do
   end
 
   defp record(id, department, expected, routes, confidence, urgent, latency) do
-    %{"id" => id, "outcome" => "ok", "department" => department, "departments" => expected,
-      "routes" => routes, "confidence" => confidence, "urgent" => urgent, "latency_ms" => latency,
-      "input_tokens" => 2, "output_tokens" => 1, "model" => "jev-test"}
+    %{
+      "id" => id,
+      "outcome" => "ok",
+      "department" => department,
+      "departments" => expected,
+      "routes" => routes,
+      "confidence" => confidence,
+      "urgent" => urgent,
+      "latency_ms" => latency,
+      "input_tokens" => 2,
+      "output_tokens" => 1,
+      "model" => "jev-test"
+    }
   end
+
   test "unknown future answers become reported example failures, not a crashed report" do
-    row = %{"id" => "future", "split" => "development", "departments" => ["billing"],
-      "routes" => ["review"]}
-    response = %TypeSafeSDK.SystemOneResponse{model: "jev", usage: %TypeSafeSDK.Usage{},
-      answers: %{}, unknown_answers: %{"department" => %{"type" => "future"}}}
+    row = %{
+      "id" => "future",
+      "split" => "development",
+      "departments" => ["billing"],
+      "routes" => ["review"]
+    }
+
+    response = %TypeSafeSDK.SystemOneResponse{
+      model: "jev",
+      usage: %TypeSafeSDK.Usage{},
+      answers: %{},
+      unknown_answers: %{"department" => %{"type" => "future"}}
+    }
+
     record = Eval.record(row, {:ok, response})
     assert record["outcome"] == "error"
     assert record["error_type"] == "unsupported_answer"
     assert Eval.metrics([record], @policy)["failures"] == 1
   end
-
 end

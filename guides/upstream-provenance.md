@@ -34,5 +34,5 @@ validation are handwritten provider behavior, not asserted changes to the wire
 source. The strict 2..255 Choice / 2..10 Score limits coexist with legacy parity
 constructors and the exported source-faithful JSON Schemas. See
 [migration](migration-0.2.md) for that boundary and
-[the implementation source ledger](../docs/implementation/0.2.0/SOURCES_AND_DECISIONS.md)
+[the implementation source ledger](https://github.com/nshkrdotcom/typesafe_sdk/blob/v0.2.0/docs/implementation/0.2.0/SOURCES_AND_DECISIONS.md)
 for the three comparison implementations and resolved design choices.

@@ -134,7 +134,6 @@ defmodule TypeSafeSDK.RetryPolicy do
 
   defp finite?(value) when is_integer(value), do: true
   defp finite?(value) when is_float(value), do: abs(value) < 1.0e308
-  defp finite?(_value), do: false
 
   defp seconds_to_ms(value), do: value |> Kernel.*(1_000) |> round()
 

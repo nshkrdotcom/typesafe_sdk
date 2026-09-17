@@ -25,6 +25,7 @@ defmodule TypeSafeSDK.SemanticQuestionsTest do
     assert prepared.definitions["team"].option_keys["option_40"] == "option_40"
 
     map_question = Choice.new!("Pick", Map.new(criteria))
+
     assert Enum.map(map_question.criteria, &elem(&1, 0)) ==
              Enum.sort(Enum.map(criteria, &elem(&1, 0)))
   end
@@ -34,6 +35,7 @@ defmodule TypeSafeSDK.SemanticQuestionsTest do
              Choice.new("Team?", [{:billing, nil}, {"billing", nil}])
 
     q = TypeSafeSDK.noul("Question?")
+
     assert {:error, %Error{path: ["questions", "q"]}} =
              TypeSafeSDK.prepare([{:q, q}, {"q", q}])
 
@@ -55,17 +57,26 @@ defmodule TypeSafeSDK.SemanticQuestionsTest do
   end
 
   test "structured levels preserve labels and descriptions and extras cannot override fields" do
-    q = Score.new!(%{question: "Rate"}, [{"Low", %{impact: "cosmetic"}}, "High"],
-      extra: %{future: true})
+    q =
+      Score.new!(%{question: "Rate"}, [{"Low", %{impact: "cosmetic"}}, "High"],
+        extra: %{future: true}
+      )
+
     assert :ok = Question.validate(q)
     assert q == Question.validate!(q)
     assert {:ok, prepared} = TypeSafeSDK.prepare(severity: q)
     encoded = prepared.encoded |> Jason.encode!() |> Jason.decode!()
+
     assert encoded["severity"]["criteria"] == [
-             %{"label" => "Low", "description" => %{"impact" => "cosmetic"}}, "High"]
+             %{"label" => "Low", "description" => %{"impact" => "cosmetic"}},
+             "High"
+           ]
+
     assert encoded["severity"]["future"]
+
     assert {:error, %Error{path: ["extra", "type"]}} =
              Noul.new("Yes?", extra: %{type: "future"})
+
     assert {:error, _} = Choice.new("Team", [a: nil, b: nil], extra: %{"criteria" => %{}})
   end
 
@@ -80,18 +91,27 @@ defmodule TypeSafeSDK.SemanticQuestionsTest do
   end
 
   test "raw future questions remain forward compatible and Prepared is reusable" do
-    assert {:ok, p} = TypeSafeSDK.prepare(%{"future" => %{
-             type: "future", instructions: "Next", future_parameter: true}})
+    assert {:ok, p} =
+             TypeSafeSDK.prepare(%{
+               "future" => %{
+                 type: "future",
+                 instructions: "Next",
+                 future_parameter: true
+               }
+             })
+
     assert {:ok, ^p} = TypeSafeSDK.prepare(p)
     assert p.definitions["future"].type == "future"
     assert {:error, _} = TypeSafeSDK.prepare(%{})
     assert {:error, _} = TypeSafeSDK.prepare(%{" " => TypeSafeSDK.noul("Yes?")})
   end
+
   test "improper JSON arrays, pair lists and level lists return validation tuples" do
     assert {:error, %Error{type: :invalid_request}} = JSON.normalize([1 | :invalid])
+
     assert {:error, %Error{type: :invalid_request}} =
-      TypeSafeSDK.prepare([{:q, TypeSafeSDK.noul("Q?")} | :invalid])
+             TypeSafeSDK.prepare([{:q, TypeSafeSDK.noul("Q?")} | :invalid])
+
     assert {:error, %Error{type: :invalid_request}} = Score.new("Rate", ["Low" | :invalid])
   end
-
 end

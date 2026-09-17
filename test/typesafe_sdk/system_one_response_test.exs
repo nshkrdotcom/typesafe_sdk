@@ -37,6 +37,7 @@ defmodule TypeSafeSDK.SystemOneResponseTest do
     assert Map.keys(SystemOneResponse.scores(response)) == ["urgency"]
   end
 
+  @tag capture_log: true
   test "ignores unknown future answer types without dropping known answers" do
     body = %{
       "model" => "jev-latest",

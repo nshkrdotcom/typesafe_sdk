@@ -5,9 +5,11 @@ defmodule TypeSafeSDK.Answer.Noul do
   @doc "Compare probability of true with a threshold (default 0.5)."
   @spec yes?(NoulAnswer.t(), number()) :: boolean()
   def yes?(answer, threshold \\ 0.5)
+
   def yes?(%NoulAnswer{noul: p}, threshold)
       when is_number(threshold) and threshold >= 0 and threshold <= 1,
       do: p >= threshold
+
   def yes?(%NoulAnswer{}, _), do: raise(ArgumentError, "threshold must be in [0, 1]")
 
   @doc "Return max(p, 1-p), a derived certainty measure, not provider confidence."

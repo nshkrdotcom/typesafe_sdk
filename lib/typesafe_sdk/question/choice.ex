@@ -13,11 +13,15 @@ defmodule TypeSafeSDK.Question.Choice do
   @spec new(term(), map() | list(), keyword()) :: {:ok, t()} | {:error, TypeSafeSDK.Error.t()}
   def new(instructions, criteria, opts \\ []) do
     with :ok <- Validation.options(opts, [:extra]) do
-      Validation.constructor(%__MODULE__{instructions: instructions, criteria: criteria,
-        extra: Keyword.get(opts, :extra, %{})})
+      Validation.constructor(%__MODULE__{
+        instructions: instructions,
+        criteria: criteria,
+        extra: Keyword.get(opts, :extra, %{})
+      })
     end
   end
 
   @spec new!(term(), map() | list(), keyword()) :: t()
-  def new!(instructions, criteria, opts \\ []), do: Validation.unwrap!(new(instructions, criteria, opts))
+  def new!(instructions, criteria, opts \\ []),
+    do: Validation.unwrap!(new(instructions, criteria, opts))
 end

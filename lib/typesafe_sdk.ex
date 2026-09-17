@@ -8,6 +8,7 @@ defmodule TypeSafeSDK do
   """
 
   alias TypeSafeSDK.{Client, Models, SystemOne}
+  alias TypeSafeSDK.Question.Validation
 
   @version "0.2.0"
 
@@ -37,16 +38,19 @@ defmodule TypeSafeSDK do
   defdelegate evaluate(client, state, questions, opts \\ []), to: TypeSafeSDK.Evaluation, as: :run
   @doc "Evaluate or raise the normalized SDK error."
   def evaluate!(client, state, questions, opts \\ []),
-    do: TypeSafeSDK.Question.Validation.unwrap!(evaluate(client, state, questions, opts))
+    do: Validation.unwrap!(evaluate(client, state, questions, opts))
 
   @doc "Lazy, bounded evaluation. See `TypeSafeSDK.Batch`."
-  defdelegate evaluate_stream(client, states, questions, opts \\ []), to: TypeSafeSDK.Batch, as: :stream
+  defdelegate evaluate_stream(client, states, questions, opts \\ []),
+    to: TypeSafeSDK.Batch,
+    as: :stream
+
   @doc "Collect the bounded evaluation stream."
   defdelegate evaluate_many(client, states, questions, opts \\ []), to: TypeSafeSDK.Batch, as: :many
 
   @doc "Legacy wire-oriented system_one call, raising on error."
   def system_one!(client, state, questions, opts \\ []),
-    do: TypeSafeSDK.Question.Validation.unwrap!(system_one(client, state, questions, opts))
+    do: Validation.unwrap!(system_one(client, state, questions, opts))
 
   @spec list_models(Client.t(), keyword()) ::
           {:ok, TypeSafeSDK.ListModelsResponse.t()} | {:error, term()}

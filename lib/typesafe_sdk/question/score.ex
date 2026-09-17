@@ -14,11 +14,15 @@ defmodule TypeSafeSDK.Question.Score do
   @spec new(term(), list(), keyword()) :: {:ok, t()} | {:error, TypeSafeSDK.Error.t()}
   def new(instructions, levels, opts \\ []) do
     with :ok <- Validation.options(opts, [:extra]) do
-      Validation.constructor(%__MODULE__{instructions: instructions, levels: levels,
-        extra: Keyword.get(opts, :extra, %{})})
+      Validation.constructor(%__MODULE__{
+        instructions: instructions,
+        levels: levels,
+        extra: Keyword.get(opts, :extra, %{})
+      })
     end
   end
 
   @spec new!(term(), list(), keyword()) :: t()
-  def new!(instructions, levels, opts \\ []), do: Validation.unwrap!(new(instructions, levels, opts))
+  def new!(instructions, levels, opts \\ []),
+    do: Validation.unwrap!(new(instructions, levels, opts))
 end

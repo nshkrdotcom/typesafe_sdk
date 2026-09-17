@@ -6,6 +6,7 @@ defmodule TypeSafeSDK.Answer.Choice do
   @spec ranked(ChoiceAnswer.t()) :: [{atom() | String.t(), number()}]
   def ranked(%ChoiceAnswer{probabilities: probabilities, option_order: order}) do
     positions = order |> Enum.with_index() |> Map.new()
+
     Enum.sort_by(probabilities, fn {key, probability} ->
       {-probability, Map.get(positions, key, map_size(positions)), to_string(key)}
     end)

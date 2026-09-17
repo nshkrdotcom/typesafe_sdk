@@ -12,16 +12,31 @@ defmodule TypeSafeSDK.SystemOneResponse do
   alias TypeSafeSDK.{ChoiceAnswer, Error, NoulAnswer, ScoreAnswer, TransportResponse, Usage}
 
   @enforce_keys [:model, :usage, :answers]
-  defstruct [:model, :usage, :answers, :request_id, :raw_http_response, :raw,
-             :batch_index, :runtime_elapsed_ms, unknown_answers: %{}, retries: 0, elapsed_ms: 0]
+  defstruct [
+    :model,
+    :usage,
+    :answers,
+    :request_id,
+    :raw_http_response,
+    :raw,
+    :batch_index,
+    :runtime_elapsed_ms,
+    unknown_answers: %{},
+    retries: 0,
+    elapsed_ms: 0
+  ]
 
   @type answer :: NoulAnswer.t() | ChoiceAnswer.t() | ScoreAnswer.t()
   @type t :: %__MODULE__{
           model: String.t(),
           usage: Usage.t(),
           answers: %{(atom() | String.t()) => answer()},
-          raw: map() | nil, unknown_answers: map(), retries: non_neg_integer(),
-          elapsed_ms: number(), runtime_elapsed_ms: number() | nil, batch_index: non_neg_integer() | nil,
+          raw: map() | nil,
+          unknown_answers: map(),
+          retries: non_neg_integer(),
+          elapsed_ms: number(),
+          runtime_elapsed_ms: number() | nil,
+          batch_index: non_neg_integer() | nil,
           request_id: String.t() | nil,
           raw_http_response: Pristine.Response.t() | nil
         }
@@ -35,7 +50,8 @@ defmodule TypeSafeSDK.SystemOneResponse do
            response
            | request_id: transport.request_id,
              raw_http_response: transport.raw_http_response,
-             retries: transport.retries, elapsed_ms: transport.elapsed_ms
+             retries: transport.retries,
+             elapsed_ms: transport.elapsed_ms
          }}
 
       {:error, %Error{} = error} ->
@@ -47,8 +63,14 @@ defmodule TypeSafeSDK.SystemOneResponse do
     with {:ok, model} <- required_string(body, "model", "model"),
          {:ok, usage} <- decode_usage(value(body, "usage")),
          {:ok, answers, unknown} <- decode_answers(value(body, "answers")) do
-      {:ok, %__MODULE__{model: model, usage: usage, answers: answers, raw: body,
-        unknown_answers: unknown}}
+      {:ok,
+       %__MODULE__{
+         model: model,
+         usage: usage,
+         answers: answers,
+         raw: body,
+         unknown_answers: unknown
+       }}
     end
   end
 
@@ -62,10 +84,15 @@ defmodule TypeSafeSDK.SystemOneResponse do
   @spec fetch!(t(), atom() | String.t()) :: answer()
   def fetch!(%__MODULE__{answers: answers} = response, id) do
     case fetch(response, id) do
-      {:ok, answer} -> answer
+      {:ok, answer} ->
+        answer
+
       :error ->
-        raise KeyError, key: id, term: answers,
-          message: "no TypeSafe answer for #{inspect(id)}; available IDs: #{inspect(Enum.sort(Map.keys(answers)))}"
+        raise KeyError,
+          key: id,
+          term: answers,
+          message:
+            "no TypeSafe answer for #{inspect(id)}; available IDs: #{inspect(Enum.sort(Map.keys(answers)))}"
     end
   end
 
@@ -107,10 +134,7 @@ defmodule TypeSafeSDK.SystemOneResponse do
       with {:ok, name} <- answer_key(name),
            false <- Map.has_key?(acc, name) or Map.has_key?(unknown, name),
            {:ok, answer} <- decode_answer(name, raw) do
-        case answer do
-          :unknown -> {:cont, {:ok, acc, Map.put(unknown, name, raw)}}
-          answer -> {:cont, {:ok, Map.put(acc, name, %{answer | id: name, raw: raw}), unknown}}
-        end
+        accumulate_answer(answer, name, raw, acc, unknown)
       else
         {:error, error} -> {:halt, {:error, error}}
         _ -> {:halt, {:error, Error.response_validation("answers", answers)}}
@@ -119,6 +143,12 @@ defmodule TypeSafeSDK.SystemOneResponse do
   end
 
   defp decode_answers(other), do: {:error, Error.response_validation("answers", other)}
+
+  defp accumulate_answer(:unknown, name, raw, acc, unknown),
+    do: {:cont, {:ok, acc, Map.put(unknown, name, raw)}}
+
+  defp accumulate_answer(answer, name, raw, acc, unknown),
+    do: {:cont, {:ok, Map.put(acc, name, %{answer | id: name, raw: raw}), unknown}}
 
   defp answer_key(key) when is_binary(key) and byte_size(key) > 0, do: {:ok, key}
   defp answer_key(key) when is_atom(key) and not is_nil(key), do: {:ok, Atom.to_string(key)}
@@ -159,7 +189,8 @@ defmodule TypeSafeSDK.SystemOneResponse do
 
   defp decode_choice(name, raw) do
     with {:ok, choice} <- required_string(raw, "choice", ["answers", name, "choice"]),
-         {:ok, confidence} <- required_probability(raw, "confidence", ["answers", name, "confidence"]),
+         {:ok, confidence} <-
+           required_probability(raw, "confidence", ["answers", name, "confidence"]),
          {:ok, probabilities} <-
            string_number_map(value(raw, "probabilities"), ["answers", name, "probabilities"]) do
       {:ok, %ChoiceAnswer{choice: choice, confidence: confidence, probabilities: probabilities}}
@@ -168,7 +199,8 @@ defmodule TypeSafeSDK.SystemOneResponse do
 
   defp decode_score(name, raw) do
     with {:ok, score} <- required_number(raw, "score", ["answers", name, "score"]),
-         {:ok, confidence} <- required_probability(raw, "confidence", ["answers", name, "confidence"]),
+         {:ok, confidence} <-
+           required_probability(raw, "confidence", ["answers", name, "confidence"]),
          {:ok, legend} <- integer_key_map(value(raw, "legend"), ["answers", name, "legend"]),
          {:ok, probabilities} <-
            integer_number_map(value(raw, "probabilities"), ["answers", name, "probabilities"]) do
@@ -214,13 +246,10 @@ defmodule TypeSafeSDK.SystemOneResponse do
   defp string_number_map(map, path) when is_map(map) do
     Enum.reduce_while(map, {:ok, %{}}, fn {key, probability}, {:ok, acc} ->
       if (is_binary(key) or is_atom(key) or is_integer(key)) and
-          is_number(probability) and probability >= 0 and probability <= 1 do
+           is_number(probability) and probability >= 0 and probability <= 1 do
         wire_key = to_string(key)
-        if Map.has_key?(acc, wire_key) do
-          {:halt, {:error, Error.response_validation(path, map)}}
-        else
-          {:cont, {:ok, Map.put(acc, wire_key, probability)}}
-        end
+
+        put_probability(acc, wire_key, probability, path, map)
       else
         {:halt, {:error, Error.response_validation(path, map)}}
       end
@@ -228,6 +257,12 @@ defmodule TypeSafeSDK.SystemOneResponse do
   end
 
   defp string_number_map(other, path), do: {:error, Error.response_validation(path, other)}
+
+  defp put_probability(acc, key, probability, path, raw) do
+    if Map.has_key?(acc, key),
+      do: {:halt, {:error, Error.response_validation(path, raw)}},
+      else: {:cont, {:ok, Map.put(acc, key, probability)}}
+  end
 
   defp integer_key_map(map, path) when is_map(map) do
     convert_integer_keys(map, path, fn value -> {:ok, value} end)

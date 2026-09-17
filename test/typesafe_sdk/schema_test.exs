@@ -3,7 +3,9 @@ defmodule TypeSafeSDK.SchemaTest do
   alias TypeSafeSDK.Schema
 
   setup do
-    directory = Path.join(System.tmp_dir!(), "typesafe-schema-#{System.unique_integer([:positive])}")
+    directory =
+      Path.join(System.tmp_dir!(), "typesafe-schema-#{System.unique_integer([:positive])}")
+
     on_exit(fn -> File.rm_rf(directory) end)
     %{directory: directory}
   end
@@ -12,9 +14,11 @@ defmodule TypeSafeSDK.SchemaTest do
     assert :ok = Schema.verify("priv/json_schema")
     docs = Schema.source_path() |> File.read!() |> Jason.decode!() |> Schema.documents()
     assert map_size(docs) == 3
+
     for {_, document} <- docs do
       refute Jason.encode!(document) =~ "#/components/schemas/"
       assert document["x-typesafe-sdk-version"] == "0.2.0"
+
       for reference <- references(document) do
         assert String.starts_with?(reference, "#/$defs/")
         assert Map.has_key?(document["$defs"], String.replace_prefix(reference, "#/$defs/", ""))
@@ -22,7 +26,9 @@ defmodule TypeSafeSDK.SchemaTest do
     end
   end
 
-  test "export is deterministic and verification detects missing, malformed and stale documents", %{directory: directory} do
+  test "export is deterministic and verification detects missing, malformed and stale documents", %{
+    directory: directory
+  } do
     assert {:error, files} = Schema.verify(directory)
     assert length(files) == 3
     assert :ok = Schema.export(directory)
@@ -38,25 +44,47 @@ defmodule TypeSafeSDK.SchemaTest do
     assert {:error, ["obsolete.json"]} = Schema.verify(directory)
   end
 
-  defp references(map) when is_map(map), do: Enum.flat_map(map, fn
-    {"$ref", reference} -> [reference]
-    {_, value} -> references(value)
-  end)
+  defp references(map) when is_map(map),
+    do:
+      Enum.flat_map(map, fn
+        {"$ref", reference} -> [reference]
+        {_, value} -> references(value)
+      end)
+
   defp references(list) when is_list(list), do: Enum.flat_map(list, &references/1)
   defp references(_), do: []
+
   test "annotations survive unchanged and unsupported external references fail closed" do
     source = Schema.source_path() |> File.read!() |> Jason.decode!()
-    annotated = put_in(source, ["components", "schemas", "SystemOneRequest", "description"],
-      "#/components/schemas/SystemOneRequest")
+
+    annotated =
+      put_in(
+        source,
+        ["components", "schemas", "SystemOneRequest", "description"],
+        "#/components/schemas/SystemOneRequest"
+      )
+
     docs = Schema.documents(annotated)
+
     assert docs["system-one-request.json"]["$defs"]["SystemOneRequest"]["description"] ==
-      "#/components/schemas/SystemOneRequest"
-    external = put_in(source, ["components", "schemas", "SystemOneRequest", "$ref"],
-      "https://example.invalid/schema.json")
+             "#/components/schemas/SystemOneRequest"
+
+    external =
+      put_in(
+        source,
+        ["components", "schemas", "SystemOneRequest", "$ref"],
+        "https://example.invalid/schema.json"
+      )
+
     assert_raise ArgumentError, fn -> Schema.documents(external) end
-    missing = put_in(source, ["components", "schemas", "SystemOneRequest", "$ref"],
-      "#/components/schemas/NotPresent")
+
+    missing =
+      put_in(
+        source,
+        ["components", "schemas", "SystemOneRequest", "$ref"],
+        "#/components/schemas/NotPresent"
+      )
+
     assert_raise KeyError, fn -> Schema.documents(missing) end
   end
-
 end

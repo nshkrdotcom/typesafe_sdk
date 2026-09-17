@@ -73,7 +73,8 @@ defmodule TypeSafeSDK.MixProject do
     [
       name: "typesafe_sdk",
       description: description(),
-      files: ~w(lib priv/upstream priv/json_schema guides cheatsheets examples README.md CHANGELOG.md LICENSE mix.exs assets docs/implementation),
+      files:
+        ~w(lib priv/upstream priv/json_schema guides cheatsheets examples README.md CHANGELOG.md LICENSE mix.exs assets docs/implementation),
       licenses: ["MIT"],
       links: %{"GitHub" => @source_url},
       maintainers: ["nshkrdotcom"]
@@ -111,7 +112,8 @@ defmodule TypeSafeSDK.MixProject do
         "guides/composite-scoring.md",
         "guides/speculative-fan-out.md",
         "guides/evaluating-decisions.md",
-        {"examples/evaluation/README.md", title: "Decision Evaluation Workflow", filename: "decision-evaluation"},
+        {"examples/evaluation/README.md",
+         title: "Decision Evaluation Workflow", filename: "decision-evaluation"},
         "cheatsheets/typesafe_sdk.cheatmd",
         "CHANGELOG.md",
         {"LICENSE", title: "License", filename: "license"}
@@ -124,23 +126,56 @@ defmodule TypeSafeSDK.MixProject do
           "guides/models.md",
           "guides/errors-and-retries.md"
         ],
-        "Semantic API": ["guides/semantic-questions.md", "guides/answers-and-confidence.md",
-          "guides/batching.md", "guides/testing.md", "guides/migration-0.2.md"],
-        Operations: ["guides/telemetry.md", "guides/runtime-capabilities.md", "guides/json-schemas.md"],
-        Patterns: ["guides/confidence-routing.md", "guides/composite-scoring.md",
-          "guides/speculative-fan-out.md", "guides/evaluating-decisions.md"],
-        Examples: ["examples/README.md", "examples/evaluation/README.md",
-          "cheatsheets/typesafe_sdk.cheatmd"],
+        "Semantic API": [
+          "guides/semantic-questions.md",
+          "guides/answers-and-confidence.md",
+          "guides/batching.md",
+          "guides/testing.md",
+          "guides/migration-0.2.md"
+        ],
+        Operations: [
+          "guides/telemetry.md",
+          "guides/runtime-capabilities.md",
+          "guides/json-schemas.md"
+        ],
+        Patterns: [
+          "guides/confidence-routing.md",
+          "guides/composite-scoring.md",
+          "guides/speculative-fan-out.md",
+          "guides/evaluating-decisions.md"
+        ],
+        Examples: [
+          "examples/README.md",
+          "examples/evaluation/README.md",
+          "cheatsheets/typesafe_sdk.cheatmd"
+        ],
         Maintainers: ["guides/generation-and-verification.md", "guides/upstream-provenance.md"],
         Project: ["CHANGELOG.md", "LICENSE"]
       ],
       groups_for_modules: [
-        "Semantic Questions": [TypeSafeSDK.Question.Noul, TypeSafeSDK.Question.Choice,
-          TypeSafeSDK.Question.Score, TypeSafeSDK.Prepared],
-        "Semantic Helpers": [TypeSafeSDK.Response, TypeSafeSDK.Answer,
-          TypeSafeSDK.Answer.Noul, TypeSafeSDK.Answer.Choice, TypeSafeSDK.Answer.Score],
-        "Batch and Observability": [TypeSafeSDK.Batch, TypeSafeSDK.Telemetry, TypeSafeSDK.RuntimeCapabilities],
-        "Testing and Contracts": [TypeSafeSDK.Test, TypeSafeSDK.Test.ContractError, TypeSafeSDK.Schema],
+        "Semantic Questions": [
+          TypeSafeSDK.Question.Noul,
+          TypeSafeSDK.Question.Choice,
+          TypeSafeSDK.Question.Score,
+          TypeSafeSDK.Prepared
+        ],
+        "Semantic Helpers": [
+          TypeSafeSDK.Response,
+          TypeSafeSDK.Answer,
+          TypeSafeSDK.Answer.Noul,
+          TypeSafeSDK.Answer.Choice,
+          TypeSafeSDK.Answer.Score
+        ],
+        "Batch and Observability": [
+          TypeSafeSDK.Batch,
+          TypeSafeSDK.Telemetry,
+          TypeSafeSDK.RuntimeCapabilities
+        ],
+        "Testing and Contracts": [
+          TypeSafeSDK.Test,
+          TypeSafeSDK.Test.ContractError,
+          TypeSafeSDK.Schema
+        ],
         "Client and Operations": [
           TypeSafeSDK,
           TypeSafeSDK.Client,

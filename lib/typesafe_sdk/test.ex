@@ -23,9 +23,12 @@ defmodule TypeSafeSDK.Test do
   @spec client(keyword()) :: Client.t()
   def client(opts \\ []) do
     limit = Keyword.get(opts, :history_limit, 1000)
+
     unless is_integer(limit) and limit in 1..10_000,
       do: raise(ArgumentError, "history_limit must be in 1..10000")
+
     {:ok, scenario} = Scenario.start(self(), limit)
+
     try do
       opts
       |> Keyword.drop([:history_limit, :transport, :transport_opts])
@@ -35,6 +38,7 @@ defmodule TypeSafeSDK.Test do
       |> Keyword.put(:transport, Transport)
       |> Keyword.put(:transport_opts, scenario: scenario)
       |> Client.new()
+      |> isolate_runtime(scenario)
     rescue
       error ->
         GenServer.stop(scenario)
@@ -82,10 +86,16 @@ defmodule TypeSafeSDK.Test do
   @spec verify!(Client.t()) :: :ok
   def verify!(client) do
     stats = stats(client)
+
     cond do
-      stats.failures != [] -> raise ContractError, message: Enum.join(stats.failures, "; ")
-      stats.pending > 0 -> raise ContractError, message: "#{stats.pending} TypeSafe sequence entries were not consumed"
-      true -> :ok
+      stats.failures != [] ->
+        raise ContractError, message: Enum.join(stats.failures, "; ")
+
+      stats.pending > 0 ->
+        raise ContractError, message: "#{stats.pending} TypeSafe sequence entries were not consumed"
+
+      true ->
+        :ok
     end
   end
 
@@ -98,11 +108,25 @@ defmodule TypeSafeSDK.Test do
     :exit, {:noproc, _} -> :ok
   end
 
+  defp isolate_runtime(client, scenario) do
+    opts = Scenario.runtime_opts(scenario)
+
+    context = %{
+      client.context
+      | rate_limit_opts: opts.rate_limit_opts,
+        circuit_breaker_opts: opts.circuit_breaker_opts
+    }
+
+    %{client | context: context, pristine_client: Pristine.Client.from_context(context)}
+  end
+
   defp install(client, fixture) do
     :ok = Scenario.install(scenario!(client), fixture)
     client
   end
+
   defp scenario!(%Client{transport: Transport, transport_opts: opts}),
     do: Keyword.fetch!(opts, :scenario)
+
   defp scenario!(_), do: raise(ArgumentError, "expected a TypeSafeSDK.Test client")
 end

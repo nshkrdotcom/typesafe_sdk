@@ -9,8 +9,10 @@ defmodule TypeSafeSDK.ListModelsResponse do
   @type t :: %__MODULE__{
           models: [ModelMetadata.t()],
           request_id: String.t() | nil,
-          raw_http_response: Pristine.Response.t() | nil, raw: map() | nil,
-          retries: non_neg_integer(), elapsed_ms: number()
+          raw_http_response: Pristine.Response.t() | nil,
+          raw: map() | nil,
+          retries: non_neg_integer(),
+          elapsed_ms: number()
         }
 
   @spec decode(term()) :: {:ok, t()} | {:error, Error.t()}
@@ -22,7 +24,8 @@ defmodule TypeSafeSDK.ListModelsResponse do
            response
            | request_id: transport.request_id,
              raw_http_response: transport.raw_http_response,
-             retries: transport.retries, elapsed_ms: transport.elapsed_ms
+             retries: transport.retries,
+             elapsed_ms: transport.elapsed_ms
          }}
 
       {:error, %Error{} = error} ->
@@ -37,7 +40,9 @@ defmodule TypeSafeSDK.ListModelsResponse do
           {:ok, response} -> {:ok, %{response | raw: body}}
           error -> error
         end
-      other -> {:error, Error.response_validation("models", other)}
+
+      other ->
+        {:error, Error.response_validation("models", other)}
     end
   end
 

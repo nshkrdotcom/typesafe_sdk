@@ -15,10 +15,16 @@ defmodule TypeSafeSDK.Question.Noul do
 
   @spec new(term(), keyword()) :: {:ok, t()} | {:error, TypeSafeSDK.Error.t()}
   def new(instructions, opts \\ []) do
-    with :ok <- Validation.options(opts, [:true, :false, :criteria, :extra]),
+    with :ok <- Validation.options(opts, [true, false, :criteria, :extra]),
          :ok <- criteria_options(opts) do
       criteria = Keyword.get(opts, :criteria, Keyword.take(opts, [true, false]))
-      q = %__MODULE__{instructions: instructions, criteria: criteria, extra: Keyword.get(opts, :extra, %{})}
+
+      q = %__MODULE__{
+        instructions: instructions,
+        criteria: criteria,
+        extra: Keyword.get(opts, :extra, %{})
+      }
+
       Validation.constructor(q)
     end
   end
@@ -27,8 +33,14 @@ defmodule TypeSafeSDK.Question.Noul do
   def new!(instructions, opts \\ []), do: Validation.unwrap!(new(instructions, opts))
 
   defp criteria_options(opts) do
-    if Keyword.has_key?(opts, :criteria) and (Keyword.has_key?(opts, true) or Keyword.has_key?(opts, false)),
-      do: {:error, TypeSafeSDK.Error.invalid_request(["criteria"], "cannot combine criteria with true/false options")},
-      else: :ok
+    if Keyword.has_key?(opts, :criteria) and
+         (Keyword.has_key?(opts, true) or Keyword.has_key?(opts, false)),
+       do:
+         {:error,
+          TypeSafeSDK.Error.invalid_request(
+            ["criteria"],
+            "cannot combine criteria with true/false options"
+          )},
+       else: :ok
   end
 end

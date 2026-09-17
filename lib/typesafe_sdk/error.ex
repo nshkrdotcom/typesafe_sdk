@@ -57,16 +57,25 @@ defmodule TypeSafeSDK.Error do
   @doc "A local request validation failure, with unambiguous path components."
   @spec invalid_request([String.t()], String.t(), map()) :: t()
   def invalid_request(path, reason, details \\ %{}) do
-    %__MODULE__{type: :invalid_request, path: path, field_path: Enum.join(path, "."),
+    %__MODULE__{
+      type: :invalid_request,
+      path: path,
+      field_path: Enum.join(path, "."),
       message: "Invalid request at #{inspect(path)}: #{reason}",
-      details: Map.put(details, :reason, reason)}
+      details: Map.put(details, :reason, reason)
+    }
   end
 
   @doc false
   def invalid_response(path, reason, body \\ nil) do
-    %__MODULE__{type: :response_validation, path: path, field_path: Enum.join(path, "."),
-      message: "Invalid response at #{inspect(path)}: #{reason}", body: body,
-      details: %{reason: reason}}
+    %__MODULE__{
+      type: :response_validation,
+      path: path,
+      field_path: Enum.join(path, "."),
+      message: "Invalid response at #{inspect(path)}: #{reason}",
+      body: body,
+      details: %{reason: reason}
+    }
   end
 
   @doc "Whether the error is eligible under the given retry policy (default: SDK default)."
@@ -76,9 +85,11 @@ defmodule TypeSafeSDK.Error do
   def retryable?(%__MODULE__{details: %{scope: :batch}}, _policy), do: false
   def retryable?(%__MODULE__{type: :connection}, policy), do: policy.api_connection_error
   def retryable?(%__MODULE__{type: :timeout}, policy), do: policy.api_timeout_error
+
   def retryable?(%__MODULE__{status: status, type: type}, policy)
       when is_integer(status) and type not in [:response_validation, :invalid_request],
       do: Enum.member?(policy.http_statuses, status)
+
   def retryable?(%__MODULE__{}, _policy), do: false
 
   @doc "Retry-After advice in milliseconds, when supplied by the service."
@@ -95,6 +106,7 @@ defmodule TypeSafeSDK.Error do
 
   def response_validation(path, body) when is_list(path) do
     field_path = Enum.join(path, ".")
+
     %__MODULE__{
       type: :response_validation,
       message: "Invalid response data at #{inspect(field_path)}",
