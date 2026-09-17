@@ -1357,6 +1357,22 @@ and held-out datasets, policy freezing, coverage/error metrics and latency/token
 
 ---
 
+# Acknowledgements
+
+TypeSafeSDK is an independent Elixir SDK, but its 0.2.0 design benefited from studying three other early community implementations of the TypeSafe API:
+
+* [mattneel/typesafe](https://github.com/mattneel/typesafe) — particularly influential around Elixir-facing response ergonomics: ranked Choice results and margins, expected versus modal Score interpretation, response lookup helpers, structured validation errors, schema export, telemetry metadata, and contract-oriented test fixtures.
+
+* [hfiguera/typesafe_ai](https://github.com/hfiguera/typesafe_ai) — particularly influential around production discipline: validating responses against the questions actually sent, treating retry/replay ambiguity explicitly, keeping telemetry privacy-safe, thinking carefully about bounded runtime behavior, and separating model evaluation from downstream application-policy evaluation.
+
+* [typesend/typesafe_ai](https://github.com/typesend/typesafe_ai) — particularly influential around the higher-level semantic programming model: ergonomic question construction, preservation of caller-supplied key identity, enriched Score semantics, prepared question sets, concurrent evaluation, application testing helpers, and uncertainty-aware decision patterns.
+
+These projects approached the same newly emerging API from different directions, and the overlap between them was useful signal: an Elixir SDK should do more than reproduce the HTTP wire format. It should make typed probabilistic decisions natural to construct, inspect, validate, test, compose, and evaluate in ordinary Elixir programs.
+
+TypeSafeSDK synthesizes ideas inspired by that work into its own architecture rather than copying any of those clients wholesale. In particular, it retains its generated OpenAPI contract and [Pristine](https://github.com/nshkrdotcom/pristine)-based transport/runtime architecture while building the semantic Elixir layer on top.
+
+---
+
 # License
 
 MIT License
