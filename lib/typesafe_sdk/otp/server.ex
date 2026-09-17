@@ -74,9 +74,11 @@ defmodule TypeSafeSDK.OTP.Server do
 
   defmacro __using__(_opts) do
     quote do
-      @behaviour TypeSafeSDK.OTP.Server
+      alias TypeSafeSDK.OTP.Server
 
-      def start_link(opts), do: TypeSafeSDK.OTP.Server.start_link(__MODULE__, opts)
+      @behaviour Server
+
+      def start_link(opts), do: Server.start_link(__MODULE__, opts)
 
       def child_spec(opts) do
         %{
@@ -190,6 +192,7 @@ defmodule TypeSafeSDK.OTP.Server do
       when is_map_key(pending, ref) do
     {entry, state} = pop_pending(state, ref)
     stop_watcher(entry.cancellation_watcher)
+    cancel(entry.cancellation)
 
     error = %Error{
       type: :task_exit,
@@ -200,7 +203,29 @@ defmodule TypeSafeSDK.OTP.Server do
     state.module.handle_evaluation({:error, error}, entry.tag, state.inner) |> route(state)
   end
 
+  def handle_info({ref, _result} = message, state) when is_reference(ref) do
+    case Enum.find(state.pending, fn
+           {_request_ref, %{cancellation_watcher: {%Task{ref: watcher_ref}, _stop}}} ->
+             watcher_ref == ref
+
+           _ ->
+             false
+         end) do
+      {request_ref, entry} ->
+        Process.demonitor(ref, [:flush])
+        entry = %{entry | cancellation_watcher: nil}
+        {:noreply, %{state | pending: Map.put(state.pending, request_ref, entry)}}
+
+      nil ->
+        delegate_info(message, state)
+    end
+  end
+
   def handle_info(message, state) do
+    delegate_info(message, state)
+  end
+
+  defp delegate_info(message, state) do
     if function_exported?(state.module, :handle_info, 2) do
       state.module.handle_info(message, state.inner) |> route(state)
     else
@@ -353,12 +378,8 @@ defmodule TypeSafeSDK.OTP.Server do
       caller_token ->
         case Pristine.Cancellation.validate(caller_token) do
           {:ok, caller_token} ->
-            watcher =
-              Pristine.Cancellation.watch(caller_token, fn ->
-                cancel(token)
-              end)
+            watcher = watch_cancellation(caller_token, token)
 
-            if Pristine.Cancellation.cancelled?(caller_token), do: cancel(token)
             {:ok, Keyword.put(opts, :cancellation, token), token, watcher}
 
           _ ->
@@ -371,6 +392,12 @@ defmodule TypeSafeSDK.OTP.Server do
              )}
         end
     end
+  end
+
+  defp watch_cancellation(caller_token, token) do
+    watcher = Pristine.Cancellation.watch(caller_token, fn -> cancel(token) end)
+    if Pristine.Cancellation.cancelled?(caller_token), do: cancel(token)
+    watcher
   end
 
   defp pop_pending(%{pending: pending} = state, ref) do
@@ -423,8 +450,7 @@ defmodule TypeSafeSDK.OTP.Server do
       supervisor ->
         case GenServer.whereis(supervisor) do
           nil ->
-            {:error,
-             Error.configuration("TypeSafeSDK.OTP.Server :task_supervisor is not running")}
+            {:error, Error.configuration("TypeSafeSDK.OTP.Server :task_supervisor is not running")}
 
           _pid ->
             {:ok, supervisor}
@@ -442,15 +468,13 @@ defmodule TypeSafeSDK.OTP.Server do
   defp evaluation_options(opts) do
     value = Keyword.get(opts, :evaluation_options, [])
 
-    cond do
-      not is_list(value) or not Keyword.keyword?(value) ->
-        {:error, Error.invalid_request(["evaluation_options"], "must be a keyword list")}
-
-      true ->
-        case Evaluation.validate_options(value) do
-          :ok -> {:ok, value}
-          {:error, error} -> {:error, error}
-        end
+    if is_list(value) and Keyword.keyword?(value) do
+      case Evaluation.validate_options(value) do
+        :ok -> {:ok, value}
+        {:error, error} -> {:error, error}
+      end
+    else
+      {:error, Error.invalid_request(["evaluation_options"], "must be a keyword list")}
     end
   end
 end

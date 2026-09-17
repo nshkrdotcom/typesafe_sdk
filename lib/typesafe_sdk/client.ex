@@ -137,8 +137,19 @@ defmodule TypeSafeSDK.Client do
     context = %{client.context | provider_profile: ProviderProfile.profile(retry_policy)}
 
     case Pristine.execute_request(request_spec, context, execute_opts) do
-      {:error, %Pristine.Error{type: :cancelled} = cause} -> {:error, Error.cancelled(cause)}
-      result -> result
+      {:error, %Pristine.Error{type: :cancelled} = cause} ->
+        {:error, Error.cancelled(cause)}
+
+      {:error, {:unsupported_transport_capabilities, _adapter, missing}} ->
+        {:error,
+         %Error{
+           type: :runtime_capability,
+           message: "Required transport cancellation capabilities are not supported",
+           details: %{missing: Map.keys(missing), statuses: missing}
+         }}
+
+      result ->
+        result
     end
   end
 

@@ -12,9 +12,11 @@ end
 
 client = Live.client()
 id = {TypeSafeSDK.Examples.LiveTelemetry, make_ref()}
+
 events =
   Enum.map([:start, :stop, :exception], &[:typesafe_sdk, :evaluate, &1]) ++
     [[:typesafe_sdk, :answer]]
+
 :ok = :telemetry.attach_many(id, events, &TypeSafeSDK.Examples.LiveTelemetry.handle/4, self())
 
 try do

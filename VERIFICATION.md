@@ -1,49 +1,75 @@
 # TypeSafeSDK 0.4.0 verification record
 
-Date: **2026-09-17**
+Date: **2026-09-17**. Local toolchain: **Elixir 1.19.5 / OTP 28.3.1**.
 
-## Delivery-environment verification
+## Dependency/source evidence
 
-Completed here:
+Runtime dependencies resolved from published Hex packages, including
+`pristine 0.4.0` and `execution_plane_http 0.2.0`. The committed runtime
+requirements are unchanged. Reach 2.8.4 and its dependencies are now locked.
+The unpublished `pristine_codegen` and `pristine_provider_testkit` maintenance
+packages used the CI bootstrap and Pristine checkout pinned to
+`04ba7b112413591f5cb9260f1d270bbbeb8a0630`; no runtime source override was used.
 
-- reconstructed the exact supplied TypeSafeSDK Repomix baseline;
-- compared the supplied `pristine_sdk.xml` bytes with that baseline;
-- confirmed the two files are identical and recorded their SHA-256 in
-  `HANDOFF.md`;
-- implemented the 0.4.0 source/docs/tests overlay;
-- inspected changed-path scope and release-version references;
-- verified the output archive contains only new/modified paths relative to the
-  supplied Repomix baseline.
+Inspected the published Pristine cancellation creation, validation, watch/stop
+and cancellation APIs, capability discovery and existing request execution path.
+The prerequisite gate and actual serialization/retry/decode tests passed against
+that runtime. The original misnamed Pristine attachment was not used as evidence.
 
-Not executable here because Elixir/Erlang/Mix are absent:
+## Completed target-host gates
 
-- `mix deps.get`;
-- formatting;
-- compilation;
-- ExUnit;
-- Reach;
-- Credo;
-- Dialyzer;
-- ExDoc;
-- TypeSafe prerequisite/schema/codegen verification;
-- live API tests/examples;
-- Hex build/publish dry run.
+- Dependency resolution and `mix typesafe.prereq`.
+- `mix format --check-formatted` and compilation with warnings as errors.
+- Offline ExUnit: **1 doctest, 135 tests, 0 failures, 2 live tests excluded**.
+- `mix credo --strict`: no issues.
+- `mix reach.check --arch --smells`: architecture passed. The 18 advisory smell
+  findings do not fail the configured gate; no architecture rule was relaxed.
+  Source scope is explicitly `lib` and `codegen` to exclude unpacked old releases.
+- `mix dialyzer`: zero errors, zero skipped warnings.
+- `mix docs --warnings-as-errors`.
+- Schema and codegen freshness verification, without refresh or regeneration.
+- `mix hex.build --unpack`, package inventory and source byte comparison.
+- `mix hex.publish --dry-run --yes` from the unpacked artifact, with a fresh
+  build directory, the QC lockfile and no workspace bootstrap. Package and docs
+  dry run passed; this did not publish anything.
+- `mix ci`: final local aggregate passed.
 
-No unexecuted gate is represented as passing.
+The artifact contains the OTP runtime, recursive/OTP guides, live example,
+committed schemas/upstream source and implementation record. It excludes
+checkout maintenance code, tests, `.reach.exs`, credentials and build artifacts.
+Only Pristine, Jason and Telemetry appear as Hex runtime requirements.
+See `PUBLISHING.md` for the unpacked-artifact publication procedure; running the
+combined publish/docs task from the checkout requires unpublished tooling.
 
-## Source-input limitation
+## Live evidence
 
-The uploaded file named as final `pristine_sdk.xml` and the TypeSafeSDK baseline
-Repomix have identical SHA-256:
+With the explicit host credential, `mix test --include live --warnings-as-errors`
+passed: **1 doctest, 137 tests, 0 failures**, including real model listing and
+System One requests. Both requested live examples also passed:
 
-`c3279fb98ae60f9a0920ef48e5d8fd7332f3fd37bb379361b3817bae8b4bca0a`
+- `examples/live_observability.exs`: start -> answer -> stop events, model
+  `jev-1.13.0`, real usage/request metadata and Pristine capability discovery.
+- `examples/live_recursive_decisions.exs`: two-level descent returned
+  `%{branch: :billing, leaf: :invoice}`.
 
-The attachment therefore cannot serve as evidence for a new/final Pristine
-runtime API or version. 0.4.0 code only uses Pristine contracts already consumed
-by the supplied TypeSafeSDK 0.3.0 baseline. The intended Pristine source must be
-verified on the target host before release.
+These checks do not establish transport queue bounds, calibration or remote
+non-execution after cancellation.
 
-## Required release gate
+## Issues resolved during QC
 
-The authoritative target-host sequence is in `HANDOFF.md` and
-`scripts/check_handoff.sh`. `mix ci` now includes the Reach architecture check.
+- Completed cancellation watcher messages no longer get consumed and then awaited
+  again forever during OTP request cleanup.
+- Worker exits cancel the private request token and return a typed task-exit
+  error; caller tokens remain caller-owned.
+- Unsupported cancellation capabilities become typed SDK errors, preserving the
+  OTP callback error contract.
+- Fixed formatting, Credo findings, hidden ExDoc reference, changelog heading
+  assertion and linked-start failure handling in the missing-supervisor test.
+- Added worker-exception, pending-status privacy, unsupported-capability and
+  future-answer telemetry/projection regression coverage, including event order.
+
+## Publication boundary
+
+Hex publication and creation/push of `v0.4.0` are intentionally pending.
+The normal push-triggered GitHub CI matrix must pass for the final commit before
+publication; use the exact commit's run, without runtime source-ref overrides.

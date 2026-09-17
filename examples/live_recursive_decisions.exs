@@ -27,12 +27,15 @@ branch =
   choose.(
     :branch,
     "Which broad area best matches this request?",
-    [billing: nil, product: nil]
+    billing: nil,
+    product: nil
   )
+
 leaves = Map.fetch!(tree, branch)
 leaf = choose.(:leaf, "Which narrower workflow best matches this request?", leaves)
 
 Live.show("Two-level bounded descent", %{branch: branch, leaf: leaf})
+
 IO.puts(
   "Each level is a separate semantic request; " <>
     "production recursion still needs explicit depth/policy bounds."

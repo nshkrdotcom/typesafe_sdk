@@ -4,6 +4,30 @@ defmodule TypeSafeSDK.OTP.ServerV040Test do
   alias Pristine.Cancellation
   alias TypeSafeSDK.{Error, Response, Test}
 
+  defmodule CrashingTransport do
+    @behaviour Pristine.Ports.Transport
+
+    @impl true
+    def capabilities(_context),
+      do: %{unary_cancellation: :supported, cancellation_cleanup: :supported}
+
+    @impl true
+    def send(_request, _context), do: raise("private transport failure")
+
+    @impl true
+    def send_cancelable(request, context, cancellation) do
+      Kernel.send(Keyword.fetch!(context.transport_opts, :test_pid), {:private_token, cancellation})
+      __MODULE__.send(request, context)
+    end
+  end
+
+  defmodule UnsupportedTransport do
+    @behaviour Pristine.Ports.Transport
+
+    @impl true
+    def send(_request, _context), do: raise("unsupported transport must not be called")
+  end
+
   defmodule Triage do
     use TypeSafeSDK.OTP.Server
 
@@ -97,6 +121,13 @@ defmodule TypeSafeSDK.OTP.ServerV040Test do
     pid = start_triage(client, supervisor, max_in_flight: 1)
     first = Task.async(fn -> GenServer.call(pid, {:classify, "invoice"}) end)
     assert_receive {:transport_started, "invoice", transport_worker}
+
+    assert status_state(pid) == %{
+             module: Triage,
+             inner: %{test_pid: self(), seen: 0},
+             in_flight: 1,
+             max_in_flight: 1
+           }
 
     assert {:error, %Error{type: :runtime_capability}} =
              GenServer.call(pid, {:classify, "login"})
@@ -259,10 +290,48 @@ defmodule TypeSafeSDK.OTP.ServerV040Test do
   end
 
   test "requires an explicit running task supervisor" do
+    Process.flag(:trap_exit, true)
     client = Test.client()
 
     assert {:error, %Error{type: :configuration}} =
              Triage.start_link(init_arg: self(), client: client, task_supervisor: :not_running)
+  end
+
+  @tag :capture_log
+  test "transport exceptions become worker-exit errors and cancel the private token", %{
+    supervisor: supervisor
+  } do
+    client =
+      TypeSafeSDK.Client.new(
+        api_key: "private-test-key",
+        transport: CrashingTransport,
+        transport_opts: [test_pid: self()],
+        retry: false
+      )
+
+    pid = start_triage(client, supervisor, max_in_flight: 1)
+
+    assert {:error, %Error{type: :task_exit} = error} =
+             GenServer.call(pid, {:classify, "invoice"})
+
+    assert_receive {:private_token, token}
+    assert Cancellation.cancelled?(token)
+    refute inspect(error) =~ "private transport failure"
+    assert Process.alive?(pid)
+    assert status_state(pid).in_flight == 0
+  end
+
+  test "unsupported cancellation returns a typed error without crashing the server", %{
+    supervisor: supervisor
+  } do
+    client = TypeSafeSDK.Client.new(api_key: "test-key", transport: UnsupportedTransport)
+    pid = start_triage(client, supervisor, max_in_flight: 1)
+
+    assert {:error, %Error{type: :runtime_capability}} =
+             GenServer.call(pid, {:classify, "invoice"})
+
+    assert Process.alive?(pid)
+    assert status_state(pid).in_flight == 0
   end
 
   defp routing_client(_test_pid) do

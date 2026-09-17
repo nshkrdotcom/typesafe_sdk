@@ -18,16 +18,20 @@ HTTP/resilience runtime. The 0.3 cancellation, retry, Prepared fingerprint,
 response-contract, request-budget, model-helper, batching, testing, and schema
 contracts remain in place.
 
-## Source limitation in this implementation session
+## Target-host finalization
 
-The file supplied as the final `pristine_sdk.xml` was byte-for-byte identical to
-the TypeSafeSDK 0.3.0 Repomix baseline (`sha256
-c3279fb98ae60f9a0920ef48e5d8fd7332f3fd37bb379361b3817bae8b4bca0a`). It did
-not contain a distinct Pristine repository. Therefore no new Pristine API claim
-was inferred from that attachment. The implementation uses only the Pristine
-contracts already consumed by the baseline (`Pristine.Cancellation`, the existing
-client/runtime execution path, and runtime capability delegation). A target-host
-agent must replace/verify this assumption against the intended final Pristine
-source before release.
+The original `pristine_sdk.xml` attachment duplicated the TypeSafeSDK baseline.
+Finalization instead verified cancellation, capability discovery and execution
+contracts directly against published Hex Pristine 0.4.0. Runtime dependencies
+remain Hex packages; the two unpublished maintenance tools use CI's pinned
+Pristine source checkout.
 
-See `HANDOFF.md` and `VERIFICATION.md` for required target-host gates.
+QC fixed completed-watcher cleanup, worker-exit token cancellation and typed
+unsupported-cancellation errors. It also resolved formatting, static analysis,
+documentation and release-consistency failures. Reach source scope is explicitly
+`lib` and `codegen`, preserving the architecture rules while excluding unpacked
+historical artifacts. Regression coverage includes worker exceptions, pending
+status privacy and future-answer telemetry/projection behavior.
+
+See `HANDOFF.md` and `VERIFICATION.md` for gate results. Publication and tagging
+remain separate release steps.

@@ -29,13 +29,22 @@
 - `mix ci`, GitHub quality CI and `scripts/check_handoff.sh` now include
   `mix reach.check --arch --smells`.
 
+### Fixed
+
+- Handle completed OTP cancellation watchers without hanging request cleanup;
+  cancel private request tokens when evaluation workers exit.
+- Normalize unsupported transport cancellation into typed SDK errors so OTP
+  consumers retain the documented error contract.
+- Restrict Reach source discovery to current runtime and maintenance source,
+  excluding unpacked historical release artifacts.
+
 ### Verification status
 
-- Static reconstruction, source inspection, overlay-diff checks and archive checks
-  were performed in the delivery environment. Elixir/Erlang/Mix are unavailable
-  there, so formatting, compilation, ExUnit, Reach, Credo, Dialyzer, ExDoc, schema
-  verification, generated-artifact verification, live API checks and Hex build are
-  explicit target-host gates in `HANDOFF.md`.
+- Target-host compilation, tests, static analysis, documentation, schema/codegen
+  freshness and package build passed against published Pristine 0.4.0.
+- Live model listing, System One, answer telemetry and recursive decision examples
+  passed. See `VERIFICATION.md` for release QC details.
+
 ## [0.3.0] - 2026-09-17
 
 ### Added

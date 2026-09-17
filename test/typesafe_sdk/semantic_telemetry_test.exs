@@ -8,6 +8,7 @@ defmodule TypeSafeSDK.SemanticTelemetryTest do
 
   setup do
     id = {__MODULE__, make_ref()}
+
     events =
       Enum.map([:start, :stop, :exception], &[:typesafe_sdk, :evaluate, &1]) ++
         [[:typesafe_sdk, :answer]]
@@ -58,7 +59,6 @@ defmodule TypeSafeSDK.SemanticTelemetryTest do
     refute inspect({start, answer_metadata, stop}) =~ "typesafe-test-key"
     refute Map.has_key?(stop, :error)
   end
-
 
   test "per-answer events expose distribution shape but not answer values or question IDs", %{
     metadata: caller
@@ -113,6 +113,40 @@ defmodule TypeSafeSDK.SemanticTelemetryTest do
 
     assert_receive {[:typesafe_sdk, :evaluate, :stop], _, %{error_type: :invalid_request}}
     assert Test.requests(client) == []
+  end
+
+  @tag :capture_log
+  test "future answers emit no answer event and known events keep Prepared order", %{
+    metadata: caller
+  } do
+    client =
+      Test.client()
+      |> Test.stub_response(%{
+        "model" => "test",
+        "usage" => %{},
+        "answers" => %{
+          "future" => %{"type" => "future-type", "payload" => "private"},
+          "known" => %{"type" => "noul", "noul" => 0.8}
+        }
+      })
+
+    assert {:ok, response} =
+             TypeSafeSDK.evaluate(
+               client,
+               "state",
+               [future: TypeSafeSDK.noul("Future?"), known: TypeSafeSDK.noul("Known?")],
+               telemetry_metadata: caller
+             )
+
+    assert TypeSafeSDK.Response.values(response) == %{known: 0.8}
+    assert_receive {start_event, _, _}
+    assert start_event == [:typesafe_sdk, :evaluate, :start]
+    assert_receive {answer_event, _, answer_metadata}
+    assert answer_event == [:typesafe_sdk, :answer]
+    assert answer_metadata.question_index == 1
+    assert_receive {stop_event, _, _}
+    assert stop_event == [:typesafe_sdk, :evaluate, :stop]
+    refute_receive {[:typesafe_sdk, :answer], _, _}
   end
 
   test "exception event excludes reason and stacktrace while preserving the caller exception", %{

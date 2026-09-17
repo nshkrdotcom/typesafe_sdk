@@ -93,12 +93,12 @@ defmodule TypeSafeSDK.Telemetry do
 
   defp answer_measurements(%NoulAnswer{noul: probability}) do
     top = max(probability, 1 - probability)
-    {:noul,
-     %{confidence: top, top_probability: top, distribution_margin: abs(2 * probability - 1)}}
+    {:noul, %{confidence: top, top_probability: top, distribution_margin: abs(2 * probability - 1)}}
   end
 
   defp answer_measurements(%ChoiceAnswer{confidence: confidence, probabilities: probabilities}) do
     ranked = probabilities |> Map.values() |> Enum.sort(:desc)
+
     {:choice,
      %{
        confidence: confidence,
@@ -109,6 +109,7 @@ defmodule TypeSafeSDK.Telemetry do
 
   defp answer_measurements(%ScoreAnswer{confidence: confidence, probabilities: probabilities}) do
     ranked = probabilities |> Map.values() |> Enum.sort(:desc)
+
     {:score,
      %{
        confidence: confidence,

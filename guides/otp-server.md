@@ -71,7 +71,7 @@ recursive decision workflow without blocking the server.
 
 Server-level `evaluation_options:` are merged with request-specific options, with
 the request-specific value winning. Those options go through the same
-`TypeSafeSDK.Evaluation.validate_options/1` path as direct `evaluate/4` calls.
+option-validation path as direct `TypeSafeSDK.evaluate/4` calls.
 
 ## Bounds and lifecycle
 

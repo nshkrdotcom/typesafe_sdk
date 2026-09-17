@@ -5,23 +5,29 @@ Date: **2026-09-17**
 
 ## Status
 
-The 0.4.0 source changes requested for the Jev-inspired work are implemented in
-this overlay, but this delivery environment has no Elixir, Erlang, or Mix. The
-next agent must run the BEAM/Hex gates below and fix any compile/format/static
-analysis issues before treating the release as complete.
+Target-host QC completed on 2026-09-17 with Elixir 1.19.5 / OTP 28.3.1.
+The offline gates, live tests and both requested live examples passed. See
+`VERIFICATION.md` for results and `PUBLISHING.md` for the remaining release steps.
+Hex publication and the `v0.4.0` tag are intentionally pending.
 
-There is also one source-input problem that must be resolved explicitly: the file
-supplied as the final `pristine_sdk.xml` is byte-for-byte identical to the
-TypeSafeSDK 0.3.0 Repomix baseline. Both files have SHA-256:
+Pristine compatibility was verified against the published Hex `pristine 0.4.0`
+source, including cancellation creation/validation/watch/stop semantics, runtime
+capability discovery and the generated request execution path. The original
+misnamed attachment is no longer a release blocker.
 
-`c3279fb98ae60f9a0920ef48e5d8fd7332f3fd37bb379361b3817bae8b4bca0a`
+Maintenance tools are not yet available on Hex. Use the CI bootstrap in
+`.github/actions/setup/action.yml`, pinned to Pristine commit
+`04ba7b112413591f5cb9260f1d270bbbeb8a0630`, for `pristine_codegen` and
+`pristine_provider_testkit` only. Runtime dependencies remain published Hex
+packages; package metadata retains ordinary Hex requirements.
 
-It therefore did **not** provide a distinct final Pristine repository to inspect.
-Do not infer any new Pristine 0.3/0.4 compatibility claim from that attachment.
-The implementation intentionally uses only Pristine APIs already present in the
-0.3.0 TypeSafeSDK baseline: `Pristine.Cancellation`, the existing generated/client
-execution path, and existing capability delegation. Verify those contracts
-against the intended final Pristine source before publication.
+Finalization fixed cancellation watcher completion handling (which previously
+hung cleanup), private-token cleanup on worker exit, typed unsupported-cancellation
+errors, formatting/static-analysis failures, a hidden documentation link and
+release-test assumptions. Reach now explicitly analyzes `lib` and `codegen` so
+unpacked historical packages cannot shadow current modules. Added regression
+coverage checks worker exceptions, pending status privacy and future-answer
+telemetry/projection behavior.
 
 ## Implemented 0.4.0 features
 
@@ -148,8 +154,8 @@ must not be globally rewritten.
 
 ## Target-host verification sequence
 
-Run from a clean checkout after applying the overlay. Use the repository's normal
-workspace bootstrap only when intentionally testing sibling source versions.
+Run from a clean checkout with the pinned maintenance-only bootstrap described
+above. Do not substitute sibling runtime sources for release verification.
 
 ```bash
 mix deps.get
@@ -226,17 +232,18 @@ cancellation semantics.
 
 ## Pristine source verification
 
-Obtain the intended final Pristine Repomix/source and verify at least:
+Verified directly in `deps/pristine` from Hex 0.4.0, with the committed lockfile:
 
-- `Pristine.Cancellation.new/0`, `cancel/1`, validation/watch semantics used by
-  the existing TypeSafe runtime and new OTP wrapper;
-- `Pristine.RuntimeCapabilities.transport/1` contract consumed by 0.3 code;
-- generated/client execution signatures used by the existing baseline;
-- the correct Hex package name/version requirement for TypeSafeSDK 0.4.0.
+- `Pristine.Cancellation.new/0`, `cancel/1`, `validate/1`, `watch/2` and
+  `stop_watcher/1`;
+- `Pristine.RuntimeCapabilities.transport/1`;
+- `Pristine.execute_request/3` and the existing generated/client path;
+- the unchanged `{:pristine, "~> 0.4.0"}` runtime requirement.
 
-If the intended final dependency really is a different Pristine version than the
-baseline's `{:pristine, "~> 0.4.0"}`, change the dependency only after verifying
-source/API compatibility and rerun every gate. Do not guess from the filename.
+The original attachment named `pristine_sdk.xml` was identical to the TypeSafeSDK
+baseline, SHA-256
+`c3279fb98ae60f9a0920ef48e5d8fd7332f3fd37bb379361b3817bae8b4bca0a`.
+It was not used as dependency compatibility evidence.
 
 ## Packaging/release checks
 

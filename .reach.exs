@@ -2,6 +2,7 @@
 # data-only response structs intentionally remain outside these layers; this gate
 # protects handwritten semantic/runtime boundaries rather than generated shape.
 [
+  checks: [source_paths: ["lib", "codegen"]],
   layers: [
     semantic: [
       "TypeSafeSDK.Question",
