@@ -2,7 +2,8 @@
 
 This runnable example measures narrow model judgments separately from application
 routing policy. It uses `TypeSafeSDK.evaluate_many`, the normal Pristine path,
-and the public semantic questions/answers. No mocked backend is used by the CLI.
+and the public semantic questions/answers. The CLI explicitly selects the live endpoint and Finch transport; no mocked
+backend or offline fallback is used. Automatic retries are disabled.
 
 ## Data and commands
 
@@ -13,7 +14,7 @@ answers. Replace these tiny illustrative sets with independently labeled,
 representative data before drawing conclusions. No measured results are bundled.
 
 ```bash
-export TYPESAFE_API_KEY='your-key'
+# Set TYPESAFE_API_KEY in your shell before running; calls may incur charges.
 mix run examples/evaluation/run.exs -- --split development --sweep \
   --max-auto-error 0.05 --output tmp/triage-development.json
 mix run examples/evaluation/run.exs -- --split held-out \
@@ -70,3 +71,12 @@ policy and no invented fallback thresholds. It exits nonzero. Frozen policy file
 are written only after an all-successful development run with one observed model
 version. Held-out reports flag a model-version mismatch and exit nonzero rather
 than presenting it as a comparable frozen-policy result.
+
+## Run with the other live examples
+
+`bash examples/run_all.sh` runs this workflow after the semantic, batch,
+observability and decision-pattern scripts, writing reports to `tmp/examples/`.
+See [the catalog](../README.md). The CLI is `run.exs`; `evaluation.exs` is its
+supporting implementation and is not a standalone example. All requests use
+actual service responses. Fixture-based harness regression tests remain in
+`test/`, separate from the live example commands.

@@ -1,5 +1,30 @@
 # TypeSafeSDK 0.2.0 verification record
 
+## Live example expansion — 2026-09-17
+
+All runnable examples explicitly call `https://api.typesafe.ai` using Finch;
+there are no fixture/offline example modes. `bash examples/run_all.sh` passed:
+legacy models/System One, two semantic prepared evaluations, ordered/unordered
+batching and early halt, telemetry attach/detach and capability inspection,
+composite scoring and speculative live model lookup, then all 12 development
+and eight held-out records. Responses came from `jev-1.13.0`. Automatic example
+retries are disabled; a success is not evidence of physical cancellation or
+transport-wide bounds. Supporting modules are not standalone entrypoints.
+
+The README now describes additive answer/response fields, strict-versus-legacy
+validation, new error categories, semantic options and every live example.
+The example catalog maps runnable coverage and explicitly identifies fixture-only
+and nondeterministic behaviors retained in ExUnit rather than simulated live.
+`PUBLISHING.md` contains the complete repeatable offline/live/publish routine.
+
+The non-regenerating handoff script passed again, as did the live ExUnit run
+(**1 doctest, 98 tests, zero failures**), actual response recording,
+`mix docs --warnings-as-errors`, shell syntax, and `git diff --check`.
+`mix hex.publish --dry-run --yes` completed package/docs checks without uploading.
+The unpacked package's semantic example also ran against the real API from a
+clean consumer project without the workspace bootstrap, using Hex dependencies.
+Generated artifacts and upstream inputs remain unchanged.
+
 ## Native release QC — 2026-09-16 (Hawaii)
 
 The historical overlay audit below is superseded by this native verification.

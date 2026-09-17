@@ -30,6 +30,9 @@
 - Runnable synthetic support-triage evaluation with separate model/policy metrics,
   development-only threshold sweeps, frozen held-out policies, ambiguous labels,
   coverage/error/review/latency/token reporting and provenance metadata.
+- Live-only runnable examples for semantic answers, batching, telemetry/runtime
+  inspection, composite scoring and speculative model lookup, with one complete
+  example runner and an expanded coverage catalog.
 - Semantic, migration, testing, uncertainty, batch, telemetry, schema, runtime and
   decision-pattern guides; cheatsheet; compatibility-matrix CI; opt-in real live
   capture/diffs without fabricated recordings or automatic commits.
@@ -49,9 +52,10 @@
 
 ### Verification status
 
-- BEAM compilation, formatting, ExUnit, Credo, Dialyzer, ExDoc, generated-code
-  verification and live API execution require the target environment. See
-  HANDOFF.md for the exact executed checks and outstanding acceptance gates.
+- Native compilation, formatting, ExUnit (including live tests), strict Credo,
+  Dialyzer, ExDoc, schema/codegen verification and Hex packaging passed. The
+  three-pair Elixir/OTP CI matrix is green. See HANDOFF.md and VERIFICATION.md
+  for execution evidence; this is not a claim of Hex publication.
 
 
 ## 0.1.2 - 2026-09-16

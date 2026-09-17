@@ -93,7 +93,7 @@ defmodule TypeSafeSDK.MixProject do
         {"README.md", title: "Overview"},
         {"guides/index.md", title: "Guide Index", filename: "guide-index"},
         "guides/getting-started.md",
-        {"examples/README.md", title: "Live API Example", filename: "live-example"},
+        {"examples/README.md", title: "Live Example Catalog", filename: "live-example"},
         "guides/client-configuration.md",
         "guides/system-one-and-questions.md",
         "guides/models.md",

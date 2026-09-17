@@ -1,13 +1,7 @@
 alias TypeSafeSDK.{Choice, Noul, Score}
 
-api_key = System.get_env("TYPESAFE_API_KEY")
-
-if is_nil(api_key) or String.trim(api_key) == "" do
-  IO.puts(:stderr, "Set TYPESAFE_API_KEY before running this live example.")
-  System.halt(1)
-end
-
-client = TypeSafeSDK.new_client(api_key: api_key, base_url: "https://api.typesafe.ai")
+Code.require_file("support/live.exs", __DIR__)
+client = TypeSafeSDK.Examples.Live.client()
 
 show = fn label, value ->
   IO.puts("\n#{label}")
@@ -47,7 +41,7 @@ questions = %{
 show.("Input state", state)
 show.("Typed questions — Noul, Choice, Score", questions)
 
-response = unwrap.(TypeSafeSDK.system_one(client, state, questions, model: "jev-latest"))
+response = TypeSafeSDK.system_one!(client, state, questions)
 
 show.("Evaluation model — TypeSafeSDK.SystemOneResponse.model", response.model)
 show.("Structured answers — NoulAnswer, ChoiceAnswer, ScoreAnswer", response.answers)

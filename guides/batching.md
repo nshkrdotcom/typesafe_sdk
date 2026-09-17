@@ -62,3 +62,6 @@ This does NOT establish a global transport queue bound, peer stream limit, or
 streaming response-byte cap. Nor does killing a worker prove the remote server
 stopped processing it. See [runtime guarantees](runtime-capabilities.md) and
 [retry ambiguity](errors-and-retries.md).
+
+Run `mix run examples/live_batching.exs` for a complete live walkthrough.
+See [the live example catalog](../examples/README.md) for setup and API-call costs.

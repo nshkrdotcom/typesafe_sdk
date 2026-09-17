@@ -26,7 +26,7 @@
 - [Speculative read-only fan-out](speculative-fan-out.md)
 - [Evaluating decisions](evaluating-decisions.md)
 - [Runnable labeled workflow](../examples/evaluation/README.md)
-- [Original live API example](../examples/README.md)
+- [Live example catalog](../examples/README.md)
 
 ## Contracts and maintenance
 

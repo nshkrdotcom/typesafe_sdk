@@ -44,3 +44,6 @@ The SDK does implement per-enumeration batch task bounds and task cleanup.
 A post-download byte-length check would not prevent an unbounded transfer, so
 0.2.0 does not pretend such a check is a streaming response cap. Unresolved
 runtime guarantees remain explicit release/deployment review items in HANDOFF.
+
+Run `mix run examples/live_observability.exs` for a complete live walkthrough.
+See [the live example catalog](../examples/README.md) for setup and API-call costs.

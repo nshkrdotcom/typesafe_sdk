@@ -30,3 +30,6 @@ timeouts/exits with input index and classification, never raw exit reasons.
 A process killed without executing cleanup cannot emit a guaranteed terminal
 semantic span. Early-halt cleanup does not fabricate completion/cancellation
 measurements for unobserved work, and no event proves remote cancellation.
+
+Run `mix run examples/live_observability.exs` for a complete live walkthrough.
+See [the live example catalog](../examples/README.md) for setup and API-call costs.

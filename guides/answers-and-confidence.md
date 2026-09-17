@@ -77,3 +77,6 @@ Both thresholds are mandatory, with `0 <= review <= act <= 1`. These numbers are
 illustrative. A confident Noul false answer can return `:act`: separately inspect
 `yes?` before deciding which business action to perform. Confidence is not a
 calibration guarantee. Choose thresholds from task-specific evidence and costs.
+
+Run `mix run examples/live_semantic.exs` for a complete live walkthrough.
+See [the live example catalog](../examples/README.md) for setup and API-call costs.

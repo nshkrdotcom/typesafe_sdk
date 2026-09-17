@@ -70,3 +70,6 @@ Legacy question structs also work with `prepare`, subject to strict constraints.
 Improper lists are rejected as invalid arrays, keyed collections or Score levels;
 they are not forwarded or treated as partially valid input. Response validation
 also retains unambiguous path components when an answer ID itself contains dots.
+
+Run `mix run examples/live_semantic.exs` for a complete live walkthrough.
+See [the live example catalog](../examples/README.md) for setup and API-call costs.

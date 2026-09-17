@@ -22,3 +22,6 @@ unchanged. Define whether incomplete evidence triggers review or a separately
 normalized partial score. Preserve each distribution: a bimodal Score can have
 the same expectation as a confident middle-level answer. Test weights, rubric
 changes and confidence policies on task-specific labeled examples.
+
+Run `mix run examples/live_decision_patterns.exs` for a complete live walkthrough.
+See [the live example catalog](../examples/README.md) for setup and API-call costs.

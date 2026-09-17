@@ -31,3 +31,6 @@ end
 Evaluate whether speculative cost/latency is worthwhile with actual workloads.
 For many TypeSafe states, prefer the SDK's bounded evaluation stream. Killing a
 local task does not prove cancellation of work already accepted by a remote API.
+
+Run `mix run examples/live_decision_patterns.exs` for a complete live walkthrough.
+See [the live example catalog](../examples/README.md) for setup and API-call costs.

@@ -1,4 +1,5 @@
 Code.require_file("evaluation.exs", __DIR__)
+Code.require_file("../support/live.exs", __DIR__)
 
 defmodule TypeSafeSDK.Examples.Evaluation.CLI do
   alias TypeSafeSDK.Examples.Evaluation, as: Eval
@@ -67,7 +68,7 @@ defmodule TypeSafeSDK.Examples.Evaluation.CLI do
     directory = Path.join(__DIR__, "datasets")
     path = Keyword.get(opts, :dataset, Path.join(directory, split <> ".jsonl"))
     rows = Eval.load!(path, split)
-    client = TypeSafeSDK.new_client(api_key: System.fetch_env!("TYPESAFE_API_KEY"), model: model)
+    client = %{TypeSafeSDK.Examples.Live.client() | default_model: model}
     records = Eval.run(client, rows, max_concurrency: concurrency)
     sweep = if sweep?, do: Eval.sweep(records, split), else: []
 

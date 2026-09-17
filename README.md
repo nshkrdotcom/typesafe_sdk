@@ -562,7 +562,7 @@ The SDK requires a nonempty list of score criteria; the committed OpenAPI schema
 
 ### Question reference
 
-All three structs are in `TypeSafeSDK`; their `instructions` field is optional and defaults to `nil`. Enforced keys require presence, not full schema validation.
+This table describes the retained wire-oriented structs in `TypeSafeSDK`; their `instructions` field is optional and defaults to `nil`. Enforced keys require presence, not strict semantic validation. New code can use the `TypeSafeSDK.Question.*` constructors described below: Choice requires 2..255 options and Score requires 2..10 levels.
 
 | Question | Enforced keys | Optional fields | Criteria |
 | --- | --- | --- | --- |
@@ -574,11 +574,11 @@ Descriptions and instructions can also contain JSON-compatible objects or arrays
 
 ### Answer reference
 
-| Struct | Exact fields |
+| Struct | Wire values and additive semantic fields |
 | --- | --- |
-| `TypeSafeSDK.NoulAnswer` | `noul`: numeric P(true), from 0 to 1. This is its only field; there is no separate confidence |
-| `TypeSafeSDK.ChoiceAnswer` | `choice`: selected label; `confidence`: certainty from 0 to 1; `probabilities`: map of string label to probability |
-| `TypeSafeSDK.ScoreAnswer` | `score`: probability-weighted expected level, possibly between integers; `confidence`: certainty from 0 to 1; `legend`: level descriptions; `probabilities`: level probabilities. Both maps use integer keys starting at 0 |
+| `TypeSafeSDK.NoulAnswer` | `noul`: numeric P(true), from 0 to 1. Also retains `id` and `raw`; there is no separate wire confidence |
+| `TypeSafeSDK.ChoiceAnswer` | `choice`: selected label; `confidence`: certainty from 0 to 1; `probabilities`: map of labels to probabilities. Semantic calls restore caller option keys and add `id`, `raw`, and `option_order` |
+| `TypeSafeSDK.ScoreAnswer` | `score`: probability-weighted expected level, possibly between integers; `confidence`: certainty from 0 to 1; `legend`: level descriptions; `probabilities`: level probabilities. Both maps use integer keys starting at 0. Also retains `id`, `raw`, `level`, `label`, `description`, `levels`, and `rubric` |
 
 ---
 
@@ -735,12 +735,12 @@ result.request_id
 
 | Struct | Fields |
 | --- | --- |
-| `TypeSafeSDK.SystemOneResponse` | `model`, `usage`, `answers`, `request_id`, `raw_http_response` |
+| `TypeSafeSDK.SystemOneResponse` | `model`, `usage`, `answers`, `request_id`, `raw_http_response`, `raw`, `unknown_answers`, `retries`, `elapsed_ms`, `runtime_elapsed_ms`, `batch_index` |
 | `TypeSafeSDK.Usage` | `input_tokens`, `output_tokens`; either can be `nil` |
-| `TypeSafeSDK.ListModelsResponse` | `models`, `request_id`, `raw_http_response` |
+| `TypeSafeSDK.ListModelsResponse` | `models`, `request_id`, `raw_http_response`, `raw`, `retries`, `elapsed_ms` |
 | `TypeSafeSDK.ModelMetadata` | `name`, `description`, `release_date` (strings) |
 
-`TypeSafeSDK.SystemOneResponse.nouls/1`, `choices/1`, and `scores/1` return maps filtered by answer type. Both response modules provide `request_id!/1` and `raw_http_response!/1`, which raise a configuration error if metadata is unavailable. The corresponding fields can be `nil`; a raw HTTP response is a `%Pristine.Response{}`.
+`TypeSafeSDK.SystemOneResponse.nouls/1`, `choices/1`, and `scores/1` return maps filtered by answer type. Both response modules provide `request_id!/1` and `raw_http_response!/1`, which raise a configuration error if metadata is unavailable. The corresponding fields can be `nil`; a raw HTTP response is a `%Pristine.Response{}`. `TypeSafeSDK.Response` delegates these accessors and adds `fetch/2` and `fetch!/2`, which use exact caller keys. Semantic `elapsed_ms` includes local validation and decoding; `runtime_elapsed_ms` retains Pristine timing. Batch indexes are zero-based, and errors store their index in `details.batch_index`.
 
 The API uses Bearer authentication at `https://api.typesafe.ai`: `POST /v1/systemone` evaluates questions, and `GET /v1/models` lists models. A state may be a string, object, or array.
 
@@ -941,6 +941,7 @@ A dependency's `config/runtime.exs` does not run in its host application. This r
 | `:headers` | None | `%{}`; map or list of header pairs |
 | `:transport` | `:transport` | `Pristine.Adapters.Transport.Finch` |
 | `:transport_opts` | `:transport_opts` | `[]` |
+| `:runtime_requirements` | None | `[]`; fail closed when required transport capabilities are unadvertised |
 | None | `:log_level` | `:warn` |
 
 Use `:model` in client options and `:default_model` in application config. Explicit non-nil client values take precedence over config for key, URL, model, and retry. Transport options use an explicit value whenever present, including `nil`; omit them to use defaults.
@@ -948,6 +949,8 @@ Use `:model` in client options and `:default_model` in application config. Expli
 ### Per-call precedence
 
 `TypeSafeSDK.system_one/4` accepts `:model`, `:timeout`, `:timeout_ms`, `:retry`, `:extra_headers`, and `:extra_body`. `TypeSafeSDK.list_models/2` accepts the timeout, retry, and extra-header options. Per-call non-nil timeout/retry values override the client; `:timeout_ms` wins over `:timeout`. A truthy per-call `:model` replaces the client default. A retry map or keyword list creates a fresh policy using defaults for unspecified fields, not a merge with the client's policy.
+
+`evaluate` / `evaluate!` accept those System One options plus `:probability_tolerance` (default 0.02, range 0..0.1) and nested `:telemetry_metadata`. Their `extra_body` cannot replace `state`, `questions`, or `model`; question extras cannot replace `type`, `instructions`, or `criteria`. Strict header validation rejects malformed names/values and case-insensitive duplicates. Batch calls additionally accept `:max_concurrency`, `:max_pending`, `:ordered`, `:on_error`, `:task_timeout_ms`, and `:attempt_timeout_ms`; see [batching](guides/batching.md) for defaults, units and lifecycle contracts.
 
 See [client configuration](guides/client-configuration.md) for more examples.
 
@@ -1020,17 +1023,29 @@ Response-validation failures retain the same HTTP/request metadata when availabl
 
 ### Error reference and raising behavior
 
-`%TypeSafeSDK.Error{}` fields are `type`, `message`, `status`, `body`, `headers`, `request_id`, `retry_after_ms`, `field_path`, `endpoint`, `raw_http_response`, and `details`.
+`%TypeSafeSDK.Error{}` fields are `type`, `message`, `status`, `body`, `headers`, `request_id`, `retry_after_ms`, `field_path`, `path`, `endpoint`, `raw_http_response`, and `details`.
 
-The full `type` enum is `:configuration`, `:bad_request`, `:authentication`, `:permission_denied`, `:not_found`, `:unprocessable_entity`, `:rate_limit`, `:internal_server`, `:api_error`, `:connection`, `:timeout`, and `:response_validation`. HTTP 400/401/403/404/422/429 map to their dedicated types; statuses >= 500 map to `:internal_server`; other unsuccessful statuses map to `:api_error`.
+The `type` values include `:invalid_request`, `:task_exit`, `:runtime_capability`, `:configuration`, `:bad_request`, `:authentication`, `:permission_denied`, `:not_found`, `:unprocessable_entity`, `:rate_limit`, `:internal_server`, `:api_error`, `:connection`, `:timeout`, and `:response_validation`. HTTP 400/401/403/404/422/429 map to their dedicated types; statuses >= 500 map to `:internal_server`; other unsuccessful statuses map to `:api_error`.
 
 HTTP 422 validation bodies contain a `detail` list whose entries have `loc`, `msg`, and `type`, optionally `input` and `ctx`. The SDK retains the body and formats field paths and messages into the error message, along with endpoint, status, and request ID when available.
 
 The tuple convention applies to request results, not all invalid arguments:
 
 - `TypeSafeSDK.new_client/1` raises a configuration error if no API key is available; invalid timeout/retry configuration can also raise.
-- Question normalization failures return `{:error, %TypeSafeSDK.Error{type: :configuration}}`.
-- Non-map, non-nil `extra_body` raises `ArgumentError`. Non-keyword option lists raise `ArgumentError` in `list_models`; `system_one` can instead raise `FunctionClauseError` while processing them. Non-list options can also fail operation guards.
+- Legacy `system_one` question normalization failures return `{:error, %TypeSafeSDK.Error{type: :configuration}}`.
+- On the legacy wire API, non-map, non-nil `extra_body` raises `ArgumentError`. Non-keyword option lists raise `ArgumentError` in `list_models`; `system_one` can instead raise `FunctionClauseError` while processing them. Non-list options can also fail operation guards.
+
+Strict `Question.*.new`, `prepare`, and `evaluate` return local validation errors
+with type `:invalid_request`, a component-list `path`, display `field_path`, and
+structured `details`. Top-level `noul/choice/score`, `new!`, `prepare!`,
+`evaluate!`, and `system_one!` raise on failure. Shared invalid batch options or
+questions raise before enumeration even with `on_error: :collect`. Per-input
+batch errors retain their input index; worker timeouts use `:timeout` with
+`details.scope == :batch`, while worker exits use `:task_exit`.
+
+`TypeSafeSDK.Error.retryable?(error, client.retry)` checks policy eligibility;
+`retry_after(error)` returns milliseconds or nil. Neither promises remaining
+attempts or exactly-once execution. See [retry ambiguity](guides/errors-and-retries.md).
 
 This local validation example makes no HTTP request:
 
@@ -1061,36 +1076,51 @@ questions
 
 ---
 
-# Live example
+# Live examples
 
-With `TYPESAFE_API_KEY` configured:
+Every runnable example in `examples/` calls `https://api.typesafe.ai`; none uses
+fixtures or an offline fallback. Set `TYPESAFE_API_KEY` in the invoking shell.
+Requests may incur charges. The examples explicitly select the live transport
+and disable automatic retries, so repeated submissions are deliberate.
 
 ```bash
+# Run the complete live walkthrough and labeled development/held-out workflow.
+bash examples/run_all.sh
+
+# Or run one topic at a time.
 mix run examples/live_evaluation.exs
+mix run examples/live_semantic.exs
+mix run examples/live_batching.exs
+mix run examples/live_observability.exs
+mix run examples/live_decision_patterns.exs
 ```
 
-The example exercises the real API and prints:
+| Example | Coverage |
+| --- | --- |
+| Legacy evaluation | Models, retained constructors, `system_one!`, wire answers and usage |
+| Semantic evaluation | Strict tuple/bang constructors, prepared reuse, structured rubrics, caller identity, fetch/filter/raw access, ranking, margins, Score helpers and gates |
+| Batching | Ordered collection, unordered streams, input indexes, concurrency/prefetch bounds, timeout budgets and early halt |
+| Observability | Live semantic events, named handler attach/detach, nested metadata, duration conversion, capability checks and schema freshness |
+| Decision patterns | Composite scoring and supervised speculative live model lookup |
+| Labeled evaluation | Development sweep, frozen held-out policy/model, model-versus-policy metrics, coverage, errors, latency and tokens |
 
-```text
-model metadata
-typed questions
-Noul answers
-Choice distributions
-Score distributions
-confidence
-token usage
-request metadata
-```
+See the [example catalog](examples/README.md) for setup, expected behavior,
+request counts, failure handling and feature coverage. The
+[evaluation workflow](examples/evaluation/README.md) explains dataset contracts
+and CLI options. Successful live calls do not establish global queue bounds,
+streaming response caps, physical cancellation, or calibrated accuracy.
 
-See the [live example walkthrough](examples/README.md).
+`TypeSafeSDK.Test` remains available for deterministic application tests; it is
+covered by the [testing guide](guides/testing.md), not by live example scripts.
 
 ---
 
 # Tests
 
 0.2.0 adds semantic, relational, consumer-fixture, batch-lifecycle, privacy, schema
-and evaluation-workflow tests. See `HANDOFF.md` for which gates were actually
-executed; inclusion of tests is not a claim that they passed in the delivery environment.
+and evaluation-workflow tests. Native QC and the three-version compatibility
+matrix have passed; [the verification record](https://github.com/nshkrdotcom/typesafe_sdk/blob/main/VERIFICATION.md)
+records executed checks. Run `bash scripts/check_handoff.sh` for all offline release gates.
 
 The standard test suite does not call the live TypeSafe API:
 
@@ -1349,7 +1379,7 @@ prepared evaluation, uncertainty helpers, batches, tests and contract tools. The
 and held-out datasets, policy freezing, coverage/error metrics and latency/token reporting.
 
 * [Guide index](guides/index.md) — installation, configuration, API usage, and maintenance.
-* [Live API example](examples/README.md) — execute both public operations and inspect structured output.
+* [Live example catalog](examples/README.md) — semantic answers, batching, telemetry, decision patterns, both public operations, and the full evaluation workflow.
 * [Upstream provenance](guides/upstream-provenance.md) — Python parity and reviewed API schema history.
 * [Changelog](CHANGELOG.md) — release history.
 * [Publishing](https://github.com/nshkrdotcom/typesafe_sdk/blob/main/PUBLISHING.md) — package verification and release procedure.

@@ -1,5 +1,14 @@
 # TypeSafeSDK 0.2.0 implementation handoff
 
+## Live examples and publish routine
+
+The 2026-09-17 documentation pass adds four live-only walkthroughs and
+`bash examples/run_all.sh`. The complete runner passed against the live service,
+including all 20 labeled evaluation records. No runnable example uses fixtures.
+See [the example catalog](examples/README.md) for coverage and
+[PUBLISHING.md](PUBLISHING.md) for the full final test/build/publish/tag sequence.
+The prior overlay history below is retained as historical provenance.
+
 ## Native QC status
 
 The overlay has now been compiled and exercised on Elixir 1.19.5 / OTP 28.3.1.
@@ -45,10 +54,10 @@ same generated Pristine operations. The generated clients/schemas, bounded
 OpenAPI, provider IR and generation inventories are unchanged. See the migration
 guide for intentionally stronger probability/usage validation in known responses.
 
-## What was actually verified here
+## Historical overlay verification
 
-This environment does not contain `elixir`, `erl`, or `mix`. Dependency access
-was unavailable. No compiler, ExUnit, formatter, Credo, Dialyzer, ExDoc, Pristine
+The original overlay environment did not contain `elixir`, `erl`, or `mix`.
+Dependency access was unavailable there. No compiler, ExUnit, formatter, Credo, Dialyzer, ExDoc, Pristine
 verification, Hex build or live API gate was run. There is no asserted green
 runtime result and no measured model accuracy/latency/calibration. Tests are
 implemented but not executed; source review is not an executed TDD cycle.
