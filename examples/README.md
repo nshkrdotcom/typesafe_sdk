@@ -1,5 +1,9 @@
 # Live example
 
+For the 0.2.0 semantic, bounded-batch and labeled-decision workflow, see
+[evaluation/README.md](evaluation/README.md). This existing live script continues
+to demonstrate the retained wire-parity API.
+
 Run from the repository root with `TYPESAFE_API_KEY` set:
 
 ```bash

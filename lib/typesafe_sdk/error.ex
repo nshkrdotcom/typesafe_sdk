@@ -10,7 +10,10 @@ defmodule TypeSafeSDK.Error do
   alias Pristine.SDK.ProviderProfile
 
   @type error_type ::
-          :configuration
+          :invalid_request
+          | :task_exit
+          | :runtime_capability
+          | :configuration
           | :bad_request
           | :authentication
           | :permission_denied
@@ -32,6 +35,7 @@ defmodule TypeSafeSDK.Error do
           request_id: String.t() | nil,
           retry_after_ms: non_neg_integer() | nil,
           field_path: String.t() | nil,
+          path: [String.t()] | nil,
           endpoint: String.t() | nil,
           raw_http_response: Pristine.Response.t() | nil,
           details: map()
@@ -45,23 +49,64 @@ defmodule TypeSafeSDK.Error do
                request_id: nil,
                retry_after_ms: nil,
                field_path: nil,
+               path: nil,
                endpoint: nil,
                raw_http_response: nil,
                details: %{}
+
+  @doc "A local request validation failure, with unambiguous path components."
+  @spec invalid_request([String.t()], String.t(), map()) :: t()
+  def invalid_request(path, reason, details \\ %{}) do
+    %__MODULE__{type: :invalid_request, path: path, field_path: Enum.join(path, "."),
+      message: "Invalid request at #{inspect(path)}: #{reason}",
+      details: Map.put(details, :reason, reason)}
+  end
+
+  @doc false
+  def invalid_response(path, reason, body \\ nil) do
+    %__MODULE__{type: :response_validation, path: path, field_path: Enum.join(path, "."),
+      message: "Invalid response at #{inspect(path)}: #{reason}", body: body,
+      details: %{reason: reason}}
+  end
+
+  @doc "Whether the error is eligible under the given retry policy (default: SDK default)."
+  @spec retryable?(t(), TypeSafeSDK.RetryPolicy.t() | false) :: boolean()
+  def retryable?(error, policy \\ %TypeSafeSDK.RetryPolicy{})
+  def retryable?(_error, false), do: false
+  def retryable?(%__MODULE__{details: %{scope: :batch}}, _policy), do: false
+  def retryable?(%__MODULE__{type: :connection}, policy), do: policy.api_connection_error
+  def retryable?(%__MODULE__{type: :timeout}, policy), do: policy.api_timeout_error
+  def retryable?(%__MODULE__{status: status, type: type}, policy)
+      when is_integer(status) and type not in [:response_validation, :invalid_request],
+      do: Enum.member?(policy.http_statuses, status)
+  def retryable?(%__MODULE__{}, _policy), do: false
+
+  @doc "Retry-After advice in milliseconds, when supplied by the service."
+  @spec retry_after(t()) :: non_neg_integer() | nil
+  def retry_after(%__MODULE__{retry_after_ms: value}), do: value
 
   @spec configuration(String.t()) :: t()
   def configuration(message) when is_binary(message) do
     %__MODULE__{type: :configuration, message: message}
   end
 
-  @spec response_validation(String.t(), term()) :: t()
-  def response_validation(field_path, body \\ nil) do
+  @spec response_validation(String.t() | [String.t()], term()) :: t()
+  def response_validation(field_path, body \\ nil)
+
+  def response_validation(path, body) when is_list(path) do
+    field_path = Enum.join(path, ".")
     %__MODULE__{
       type: :response_validation,
       message: "Invalid response data at #{inspect(field_path)}",
       field_path: field_path,
+      path: path,
       body: body
     }
+  end
+
+  def response_validation(field_path, body) when is_binary(field_path) do
+    error = response_validation(String.split(field_path, "."), body)
+    %{error | field_path: field_path}
   end
 
   @doc false
@@ -92,7 +137,7 @@ defmodule TypeSafeSDK.Error do
   end
 
   @doc false
-  @spec attach_response(t(), Pristine.Response.t(), term()) :: t()
+  @spec attach_response(t(), Pristine.Response.t() | nil, term()) :: t()
   def attach_response(%__MODULE__{} = error, %Pristine.Response{} = response, decoded_body) do
     headers = normalize_headers(response.headers)
     request_id = header(headers, "x-typesafe-request-id")
@@ -115,6 +160,8 @@ defmodule TypeSafeSDK.Error do
         message: format_message(endpoint, response.status, detail, request_id)
     }
   end
+
+  def attach_response(%__MODULE__{} = error, nil, decoded_body), do: %{error | body: decoded_body}
 
   @doc false
   def connection_error(reason, _opts \\ []) do

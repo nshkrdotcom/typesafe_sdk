@@ -1,0 +1,51 @@
+name: Live API capture
+
+on:
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: typesafe-live-capture
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    if: vars.TYPESAFE_LIVE_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Check explicit API credential
+        id: key
+        env:
+          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
+        run: |
+          if [ -n "$TYPESAFE_API_KEY" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Live capture skipped: TYPESAFE_API_KEY is not configured."
+          fi
+      - uses: ./.github/actions/setup
+        if: steps.key.outputs.present == 'true'
+        with:
+          elixir: '1.19.5'
+          otp: '28.3.1'
+      - name: Record synthetic-input live responses and diffs
+        if: steps.key.outputs.present == 'true'
+        env:
+          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
+        run: mix typesafe.record --output tmp/live --baseline test/fixtures/live
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.key.outputs.present == 'true'
+        with:
+          name: typesafe-live-capture
+          path: tmp/live/
+          if-no-files-found: warn
+          retention-days: 14

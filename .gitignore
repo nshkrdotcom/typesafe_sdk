@@ -20,3 +20,7 @@ typesafe-sdk-python/
 
 /typesafe_sdk-*/
 *.tar
+
+# Local live/evaluation outputs; never ship credentials or unreviewed recordings.
+/tmp/
+typesafe_sdk.xml

@@ -51,7 +51,8 @@ one client rather than separate sync/async class trees.
 
 ## Gates
 
-Run in this order after generation:
+For intentional upstream/codegen changes, run in this order after generation
+(for ordinary changes use the non-regenerating `scripts/check_handoff.sh`):
 
 1. Complete and QC `PREREQUISITE_PRISTINE_0.3.0.md` in Pristine.
 2. `mix deps.get`
@@ -69,3 +70,25 @@ Run in this order after generation:
 14. `mix hex.build --unpack`
 
 Do not call the handoff complete while any applicable gate is red.
+
+## 0.2.0 semantic layer and release discipline
+
+- Read `docs/implementation/0.2.0/README.md` and `HANDOFF.md` before changing the
+  semantic surface. Keep public response/answer structs additive; helper namespaces
+  are not a second Result hierarchy.
+- Legacy constructors/system_one remain parity APIs. Strict Question.* / evaluate
+  own semantic counts, protected extras, caller identity and relational validation.
+- Never use String.to_atom on untrusted data. Ordered JSON and cached fragments
+  must be built only from validated question definitions.
+- Application fixtures must exercise the real Pristine serialization/retry/decode
+  path. Do not use fixtures as evidence that a live API or transport bound works.
+- Keep batch lifecycle isolated per enumeration; test timeout, early halt, caller
+  death, unordered identity, and creators that trap exits.
+- Semantic telemetry never emits state/questions/bodies/headers/raw errors or
+  stacktraces. Caller metadata stays nested and explicitly caller-controlled.
+- Run schema verification in addition to codegen verification. Do not regenerate
+  before a freshness gate just to hide pre-existing drift. Only intentional source
+  edits justify regeneration; review generated diffs.
+- Release is 0.2.0, dated 2026-09-16. Historical/dependency/upstream versions are
+  not placeholders to globally replace. Do not assert publication or successful
+  BEAM gates until they have actually run.

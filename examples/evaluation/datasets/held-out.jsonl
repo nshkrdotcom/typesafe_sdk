@@ -1,0 +1,8 @@
+{"id": "held-01", "split": "held-out", "state": "My cancelled account was billed again yesterday.", "departments": ["billing"], "routes": ["billing"]}
+{"id": "held-02", "split": "held-out", "state": "The integration is dropping every event and a critical customer workflow is stopped.", "departments": ["technical"], "routes": ["urgent"]}
+{"id": "held-03", "split": "held-out", "state": "We are considering an enterprise contract; who handles pricing?", "departments": ["sales"], "routes": ["sales"]}
+{"id": "held-04", "split": "held-out", "state": "The documentation search returns no results for a term that exists.", "departments": ["technical"], "routes": ["technical"]}
+{"id": "held-05", "split": "held-out", "state": "Please update the company name printed on future invoices.", "departments": ["billing"], "routes": ["billing"]}
+{"id": "held-06", "split": "held-out", "state": "We need to understand whether this plan supports our integration before buying.", "departments": ["sales", "technical"], "routes": ["sales", "technical", "review"]}
+{"id": "held-07", "split": "held-out", "state": "All projects disappeared from our dashboard during an active incident.", "departments": ["technical"], "routes": ["urgent"]}
+{"id": "held-08", "split": "held-out", "state": "A renewal warning appeared while the page was unresponsive. I cannot determine the problem.", "departments": ["billing", "technical"], "routes": ["review", "billing", "technical"]}

@@ -4,54 +4,57 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    name: Elixir ${{ matrix.elixir }} / OTP ${{ matrix.otp }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - elixir: '1.18.4'
+            otp: '27.3'
+          - elixir: '1.19.5'
+            otp: '28.3.1'
+          - elixir: '1.20.4'
+            otp: '29.0.6'
     steps:
       - uses: actions/checkout@v4
-      - name: Check out Pristine maintenance tools
-        uses: actions/checkout@v4
         with:
-          repository: nshkrdotcom/pristine
-          ref: c43942926d6b8dfb4bd8771b0a1cc19e3093b561
-          path: .tooling/pristine
           persist-credentials: false
-      - name: Select maintenance tool sources
-        run: |
-          cat > "$RUNNER_TEMP/pristine_tools.exs" <<'ELIXIR'
-          defmodule MixWorkspaceOpsBootstrap do
-            @tools_root Path.join(System.fetch_env!("GITHUB_WORKSPACE"), ".tooling/pristine/apps")
-
-            def dep(committed, project_root) do
-              app = elem(committed, 0)
-
-              if app in [:pristine_codegen, :pristine_provider_testkit] do
-                opts = if tuple_size(committed) == 3, do: elem(committed, 2), else: []
-                path = Path.relative_to(Path.join(@tools_root, Atom.to_string(app)), project_root, force: true)
-                {app, Keyword.merge(opts, path: path, override: true)}
-              else
-                committed
-              end
-            end
-          end
-          ELIXIR
-          echo "MIX_WORKSPACE_OPS_BOOTSTRAP=$RUNNER_TEMP/pristine_tools.exs" >> "$GITHUB_ENV"
-      - uses: erlef/setup-beam@v1
+      - uses: ./.github/actions/setup
         with:
-          otp-version: '28.3.1'
-          elixir-version: '1.19.5'
-      - run: mix deps.get
+          elixir: ${{ matrix.elixir }}
+          otp: ${{ matrix.otp }}
       - run: mix typesafe.prereq
-      - run: mix typesafe.generate --project-root .
+      - run: mix compile --warnings-as-errors
+      - run: mix test --warnings-as-errors
+      - run: mix typesafe.schema.verify
+      - run: mix typesafe.verify --project-root .
+
+  quality:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+        with:
+          elixir: '1.19.5'
+          otp: '28.3.1'
+      - run: mix typesafe.prereq
       - run: mix format --check-formatted
       - run: mix compile --warnings-as-errors
-      - run: mix test
       - run: mix credo --strict
       - run: mix dialyzer
       - run: mix docs --warnings-as-errors
+      - run: mix typesafe.schema.verify
       - run: mix typesafe.verify --project-root .
       - run: mix hex.build --unpack

@@ -12,13 +12,16 @@ defmodule TypeSafeSDK.SystemOneResponse do
   alias TypeSafeSDK.{ChoiceAnswer, Error, NoulAnswer, ScoreAnswer, TransportResponse, Usage}
 
   @enforce_keys [:model, :usage, :answers]
-  defstruct [:model, :usage, :answers, :request_id, :raw_http_response]
+  defstruct [:model, :usage, :answers, :request_id, :raw_http_response, :raw,
+             :batch_index, :runtime_elapsed_ms, unknown_answers: %{}, retries: 0, elapsed_ms: 0]
 
   @type answer :: NoulAnswer.t() | ChoiceAnswer.t() | ScoreAnswer.t()
   @type t :: %__MODULE__{
           model: String.t(),
           usage: Usage.t(),
-          answers: %{String.t() => answer()},
+          answers: %{(atom() | String.t()) => answer()},
+          raw: map() | nil, unknown_answers: map(), retries: non_neg_integer(),
+          elapsed_ms: number(), runtime_elapsed_ms: number() | nil, batch_index: non_neg_integer() | nil,
           request_id: String.t() | nil,
           raw_http_response: Pristine.Response.t() | nil
         }
@@ -31,7 +34,8 @@ defmodule TypeSafeSDK.SystemOneResponse do
          %{
            response
            | request_id: transport.request_id,
-             raw_http_response: transport.raw_http_response
+             raw_http_response: transport.raw_http_response,
+             retries: transport.retries, elapsed_ms: transport.elapsed_ms
          }}
 
       {:error, %Error{} = error} ->
@@ -42,12 +46,28 @@ defmodule TypeSafeSDK.SystemOneResponse do
   def decode(body) when is_map(body) do
     with {:ok, model} <- required_string(body, "model", "model"),
          {:ok, usage} <- decode_usage(value(body, "usage")),
-         {:ok, answers} <- decode_answers(value(body, "answers")) do
-      {:ok, %__MODULE__{model: model, usage: usage, answers: answers}}
+         {:ok, answers, unknown} <- decode_answers(value(body, "answers")) do
+      {:ok, %__MODULE__{model: model, usage: usage, answers: answers, raw: body,
+        unknown_answers: unknown}}
     end
   end
 
   def decode(body), do: {:error, Error.response_validation("response", body)}
+
+  @doc "Fetch an answer using its exact caller key (or wire key for system_one)."
+  @spec fetch(t(), atom() | String.t()) :: {:ok, answer()} | :error
+  def fetch(%__MODULE__{answers: answers}, id), do: Map.fetch(answers, id)
+
+  @doc "Fetch an answer or raise a KeyError listing the available IDs."
+  @spec fetch!(t(), atom() | String.t()) :: answer()
+  def fetch!(%__MODULE__{answers: answers} = response, id) do
+    case fetch(response, id) do
+      {:ok, answer} -> answer
+      :error ->
+        raise KeyError, key: id, term: answers,
+          message: "no TypeSafe answer for #{inspect(id)}; available IDs: #{inspect(Enum.sort(Map.keys(answers)))}"
+    end
+  end
 
   @spec request_id!(t()) :: String.t()
   def request_id!(%__MODULE__{request_id: request_id}) when is_binary(request_id), do: request_id
@@ -64,13 +84,13 @@ defmodule TypeSafeSDK.SystemOneResponse do
     raise Error.configuration("The response was not created from a raw HTTP response")
   end
 
-  @spec nouls(t()) :: %{String.t() => NoulAnswer.t()}
+  @spec nouls(t()) :: %{(atom() | String.t()) => NoulAnswer.t()}
   def nouls(%__MODULE__{answers: answers}), do: select(answers, NoulAnswer)
 
-  @spec choices(t()) :: %{String.t() => ChoiceAnswer.t()}
+  @spec choices(t()) :: %{(atom() | String.t()) => ChoiceAnswer.t()}
   def choices(%__MODULE__{answers: answers}), do: select(answers, ChoiceAnswer)
 
-  @spec scores(t()) :: %{String.t() => ScoreAnswer.t()}
+  @spec scores(t()) :: %{(atom() | String.t()) => ScoreAnswer.t()}
   def scores(%__MODULE__{answers: answers}), do: select(answers, ScoreAnswer)
 
   defp decode_usage(usage) when is_map(usage) do
@@ -83,16 +103,26 @@ defmodule TypeSafeSDK.SystemOneResponse do
   defp decode_usage(other), do: {:error, Error.response_validation("usage", other)}
 
   defp decode_answers(answers) when is_map(answers) do
-    Enum.reduce_while(answers, {:ok, %{}}, fn {name, raw}, {:ok, acc} ->
-      case decode_answer(to_string(name), raw) do
-        {:ok, :unknown} -> {:cont, {:ok, acc}}
-        {:ok, answer} -> {:cont, {:ok, Map.put(acc, to_string(name), answer)}}
+    Enum.reduce_while(answers, {:ok, %{}, %{}}, fn {name, raw}, {:ok, acc, unknown} ->
+      with {:ok, name} <- answer_key(name),
+           false <- Map.has_key?(acc, name) or Map.has_key?(unknown, name),
+           {:ok, answer} <- decode_answer(name, raw) do
+        case answer do
+          :unknown -> {:cont, {:ok, acc, Map.put(unknown, name, raw)}}
+          answer -> {:cont, {:ok, Map.put(acc, name, %{answer | id: name, raw: raw}), unknown}}
+        end
+      else
         {:error, error} -> {:halt, {:error, error}}
+        _ -> {:halt, {:error, Error.response_validation("answers", answers)}}
       end
     end)
   end
 
   defp decode_answers(other), do: {:error, Error.response_validation("answers", other)}
+
+  defp answer_key(key) when is_binary(key) and byte_size(key) > 0, do: {:ok, key}
+  defp answer_key(key) when is_atom(key) and not is_nil(key), do: {:ok, Atom.to_string(key)}
+  defp answer_key(key), do: {:error, Error.response_validation("answers", key)}
 
   defp decode_answer(name, raw) when is_map(raw) do
     case value(raw, "type") do
@@ -107,41 +137,41 @@ defmodule TypeSafeSDK.SystemOneResponse do
 
       type when is_binary(type) ->
         Logger.warning(
-          "Ignoring TypeSafe answer #{inspect(name)} with unrecognized type #{inspect(type)}"
+          "Ignoring a TypeSafe answer with an unrecognized future type; inspect response.raw explicitly"
         )
 
         {:ok, :unknown}
 
       _ ->
-        {:error, Error.response_validation("answers.#{name}.type", raw)}
+        {:error, Error.response_validation(["answers", name, "type"], raw)}
     end
   end
 
   defp decode_answer(name, raw),
-    do: {:error, Error.response_validation("answers.#{name}.type", raw)}
+    do: {:error, Error.response_validation(["answers", name, "type"], raw)}
 
   defp decode_noul(name, raw) do
     case value(raw, "noul") do
-      value when is_number(value) -> {:ok, %NoulAnswer{noul: value}}
-      _ -> {:error, Error.response_validation("answers.#{name}.noul", raw)}
+      value when is_number(value) and value >= 0 and value <= 1 -> {:ok, %NoulAnswer{noul: value}}
+      _ -> {:error, Error.response_validation(["answers", name, "noul"], raw)}
     end
   end
 
   defp decode_choice(name, raw) do
-    with {:ok, choice} <- required_string(raw, "choice", "answers.#{name}.choice"),
-         {:ok, confidence} <- required_number(raw, "confidence", "answers.#{name}.confidence"),
+    with {:ok, choice} <- required_string(raw, "choice", ["answers", name, "choice"]),
+         {:ok, confidence} <- required_probability(raw, "confidence", ["answers", name, "confidence"]),
          {:ok, probabilities} <-
-           string_number_map(value(raw, "probabilities"), "answers.#{name}.probabilities") do
+           string_number_map(value(raw, "probabilities"), ["answers", name, "probabilities"]) do
       {:ok, %ChoiceAnswer{choice: choice, confidence: confidence, probabilities: probabilities}}
     end
   end
 
   defp decode_score(name, raw) do
-    with {:ok, score} <- required_number(raw, "score", "answers.#{name}.score"),
-         {:ok, confidence} <- required_number(raw, "confidence", "answers.#{name}.confidence"),
-         {:ok, legend} <- integer_key_map(value(raw, "legend"), "answers.#{name}.legend"),
+    with {:ok, score} <- required_number(raw, "score", ["answers", name, "score"]),
+         {:ok, confidence} <- required_probability(raw, "confidence", ["answers", name, "confidence"]),
+         {:ok, legend} <- integer_key_map(value(raw, "legend"), ["answers", name, "legend"]),
          {:ok, probabilities} <-
-           integer_number_map(value(raw, "probabilities"), "answers.#{name}.probabilities") do
+           integer_number_map(value(raw, "probabilities"), ["answers", name, "probabilities"]) do
       {:ok,
        %ScoreAnswer{
          score: score,
@@ -169,19 +199,32 @@ defmodule TypeSafeSDK.SystemOneResponse do
   defp optional_integer(map, key, path) do
     case value(map, key) do
       nil -> {:ok, nil}
-      value when is_integer(value) -> {:ok, value}
+      value when is_integer(value) and value >= 0 -> {:ok, value}
+      _ -> {:error, Error.response_validation(path, map)}
+    end
+  end
+
+  defp required_probability(map, key, path) do
+    case value(map, key) do
+      value when is_number(value) and value >= 0 and value <= 1 -> {:ok, value}
       _ -> {:error, Error.response_validation(path, map)}
     end
   end
 
   defp string_number_map(map, path) when is_map(map) do
-    if Enum.all?(map, fn {key, value} ->
-         (is_binary(key) or is_atom(key) or is_integer(key)) and is_number(value)
-       end) do
-      {:ok, Map.new(map, fn {key, value} -> {to_string(key), value} end)}
-    else
-      {:error, Error.response_validation(path, map)}
-    end
+    Enum.reduce_while(map, {:ok, %{}}, fn {key, probability}, {:ok, acc} ->
+      if (is_binary(key) or is_atom(key) or is_integer(key)) and
+          is_number(probability) and probability >= 0 and probability <= 1 do
+        wire_key = to_string(key)
+        if Map.has_key?(acc, wire_key) do
+          {:halt, {:error, Error.response_validation(path, map)}}
+        else
+          {:cont, {:ok, Map.put(acc, wire_key, probability)}}
+        end
+      else
+        {:halt, {:error, Error.response_validation(path, map)}}
+      end
+    end)
   end
 
   defp string_number_map(other, path), do: {:error, Error.response_validation(path, other)}
@@ -194,7 +237,7 @@ defmodule TypeSafeSDK.SystemOneResponse do
 
   defp integer_number_map(map, path) when is_map(map) do
     convert_integer_keys(map, path, fn
-      value when is_number(value) -> {:ok, value}
+      value when is_number(value) and value >= 0 and value <= 1 -> {:ok, value}
       value -> {:error, Error.response_validation(path, value)}
     end)
   end
@@ -204,6 +247,7 @@ defmodule TypeSafeSDK.SystemOneResponse do
   defp convert_integer_keys(map, path, value_fun) do
     Enum.reduce_while(map, {:ok, %{}}, fn {key, value}, {:ok, acc} ->
       with {:ok, integer_key} <- integer_key(key),
+           false <- Map.has_key?(acc, integer_key),
            {:ok, normalized_value} <- value_fun.(value) do
         {:cont, {:ok, Map.put(acc, integer_key, normalized_value)}}
       else

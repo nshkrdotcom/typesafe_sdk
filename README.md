@@ -591,7 +591,7 @@ Add the dependency to your application's `mix.exs`:
 ```elixir
 def deps do
   [
-    {:typesafe_sdk, "~> 0.1.2"}
+    {:typesafe_sdk, "~> 0.2.0"}
   ]
 end
 ```
@@ -602,7 +602,7 @@ Then:
 mix deps.get
 ```
 
-Both TypeSafeSDK 0.1.2 and Pristine 0.3.0 are published on Hex, and this dependency combination resolves in a clean host project. Pristine `~> 0.3.0` is required; do not downgrade it to 0.2.x. Source-checkout maintenance tools need the contributor setup below.
+This source tree targets TypeSafeSDK 0.2.0. Use the Hex dependency above after the release is published; before publication, use a local path dependency. Pristine `~> 0.3.0` remains required; do not downgrade it to 0.2.x. Source-checkout maintenance tools need the contributor setup below. See `HANDOFF.md` for the verification and release status of this change set.
 
 Get an API key from the [TypeSafe dashboard](https://console.typesafe.ai), following the [official quick start](https://docs.typesafe.ai/introduction/quickstart). Set `TYPESAFE_API_KEY` in your environment, then configure it in your host application's `config/runtime.exs`:
 
@@ -619,7 +619,62 @@ The default transport is `Pristine.Adapters.Transport.Finch`, with `transport_op
 
 ---
 
-# Quick start
+# The 0.2.0 semantic API
+
+The wire API remains available. New integrations can use validated, ordered
+questions and receive the same public response types enriched with their original
+Elixir keys, labels, distributions and request metadata.
+
+```elixir
+client = TypeSafeSDK.new_client()
+questions = TypeSafeSDK.prepare!(
+  urgent: TypeSafeSDK.noul("Does this need immediate attention?"),
+  team: TypeSafeSDK.choice("Which team should handle this?",
+    billing: "Invoices and payments", technical: "Failures and outages"),
+  severity: TypeSafeSDK.score("Business impact?", [
+    {"Low", "Cosmetic; a workaround exists"}, {"High", "Blocking core work"}
+  ])
+)
+{:ok, response} = TypeSafeSDK.evaluate(client, "Our production integration is down", questions)
+team = TypeSafeSDK.Response.fetch!(response, :team)
+team.choice                                  # caller atom, not an invented atom
+TypeSafeSDK.Answer.Choice.ranked(team)
+TypeSafeSDK.Answer.Choice.margin(team)
+TypeSafeSDK.Answer.Score.expected_level(response.answers.severity)
+TypeSafeSDK.Answer.Score.max_level(response.answers.severity)
+TypeSafeSDK.Answer.gate(team, act: 0.90, review: 0.70)
+```
+
+The gate thresholds above are illustrative application policy, not a calibration
+or safety guarantee. A rounded expected score need not be the most probable
+level. Choice margin and provider confidence are different quantities.
+
+Strict evaluation checks the answer against the question actually sent: IDs,
+types, selected options, distribution domains/sums, Score bounds and rubric
+indices. Caller keys restore through finite registries, never by atomizing
+remote text. Unknown future answer types remain in raw data and
+`unknown_answers`; applications must handle the absence of a typed answer.
+
+Prepared sets cache validated question JSON. `evaluate_stream` and
+`evaluate_many` add bounded supervised concurrency, indexed results, explicit
+timeout budgets and cleanup on early halt. `TypeSafeSDK.Test` scripts actual
+transport responses while preserving production serialization/retries/decoding.
+Semantic telemetry adds model, usage and request outcomes without automatically
+exporting state, questions, bodies or credentials.
+
+The release also includes self-contained JSON Schema export/verification,
+explicit runtime-capability auditing, an opt-in live-capture workflow and a
+runnable labeled evaluation harness that separates model judgment from routing
+policy. Transport-wide queues, streaming body caps and physical cancellation
+are not fabricated SDK guarantees: missing runtime capabilities report unverified.
+
+See [migration](guides/migration-0.2.md), [semantic questions](guides/semantic-questions.md),
+[answers](guides/answers-and-confidence.md), [batching](guides/batching.md),
+[testing](guides/testing.md), and [evaluating decisions](guides/evaluating-decisions.md).
+
+---
+
+# Quick start: retained wire API
 
 ```elixir
 alias TypeSafeSDK.{Choice, Noul, Score}
@@ -900,6 +955,10 @@ See [client configuration](guides/client-configuration.md) for more examples.
 
 # Retry semantics
 
+Retries provide at-least-once request execution, not exactly-once processing. A
+transport failure after submission may occur after the service processed/billed
+the evaluation. Local task cancellation cannot undo that remote work.
+
 The SDK preserves the behavior of the upstream TypeSafe Python SDK.
 
 By default it retries:
@@ -1028,6 +1087,10 @@ See the [live example walkthrough](examples/README.md).
 ---
 
 # Tests
+
+0.2.0 adds semantic, relational, consumer-fixture, batch-lifecycle, privacy, schema
+and evaluation-workflow tests. See `HANDOFF.md` for which gates were actually
+executed; inclusion of tests is not a claim that they passed in the delivery environment.
 
 The standard test suite does not call the live TypeSafe API:
 
@@ -1279,6 +1342,11 @@ System One allows applications to express these questions as typed function call
 ---
 
 # Documentation
+
+The [0.2.0 cheatsheet](cheatsheets/typesafe_sdk.cheatmd) covers strict constructors,
+prepared evaluation, uncertainty helpers, batches, tests and contract tools. The
+[labeled evaluation workflow](examples/evaluation/README.md) includes development
+and held-out datasets, policy freezing, coverage/error metrics and latency/token reporting.
 
 * [Guide index](guides/index.md) — installation, configuration, API usage, and maintenance.
 * [Live API example](examples/README.md) — execute both public operations and inspect structured output.

@@ -25,3 +25,14 @@ the stricter generated wire schemas. Newly referenced schema names or changed
 union alternatives require source review before generation.
 
 Official documentation starts at [the documentation index](https://docs.typesafe.ai/llms.txt).
+
+## 0.2.0 semantic layer
+
+The committed OpenAPI snapshot and generated operation/schema artifacts are
+unchanged by this release. New semantic constraints and response-to-request
+validation are handwritten provider behavior, not asserted changes to the wire
+source. The strict 2..255 Choice / 2..10 Score limits coexist with legacy parity
+constructors and the exported source-faithful JSON Schemas. See
+[migration](migration-0.2.md) for that boundary and
+[the implementation source ledger](../docs/implementation/0.2.0/SOURCES_AND_DECISIONS.md)
+for the three comparison implementations and resolved design choices.

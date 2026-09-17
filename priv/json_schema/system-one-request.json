@@ -1,0 +1,771 @@
+{
+  "$defs": {
+    "Answer": {
+      "description": "An answer whose type matches the corresponding question.",
+      "discriminator": {
+        "mapping": {
+          "choice": "#/$defs/ChoiceAnswer",
+          "noul": "#/$defs/NoulAnswer",
+          "score": "#/$defs/ScoreAnswer"
+        },
+        "propertyName": "type"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/NoulAnswer"
+        },
+        {
+          "$ref": "#/$defs/ScoreAnswer"
+        },
+        {
+          "$ref": "#/$defs/ChoiceAnswer"
+        }
+      ]
+    },
+    "ChoiceAnswer": {
+      "description": "The selected choice, confidence, and probabilities for a choice question.",
+      "properties": {
+        "choice": {
+          "description": "The name of the choice with the highest probability among the question's criteria.",
+          "examples": [
+            "angry"
+          ],
+          "title": "Choice",
+          "type": "string"
+        },
+        "confidence": {
+          "description": "Confidence in the selected choice, from 0 to 1. Higher values indicate greater certainty; use lower values to flag uncertain selections for review.",
+          "examples": [
+            0.9
+          ],
+          "title": "Confidence",
+          "type": "number"
+        },
+        "probabilities": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "description": "Probability of each choice in criteria, keyed by choice name, from 0 to 1. Shows how likely the alternatives are; values sum to approximately 1.",
+          "examples": [
+            {
+              "angry": 0.8,
+              "calm": 0.1,
+              "excited": 0.1
+            }
+          ],
+          "title": "Probabilities",
+          "type": "object"
+        },
+        "type": {
+          "const": "choice",
+          "description": "Identifies a selection from the requested choices.",
+          "examples": [
+            "choice"
+          ],
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "choice",
+        "confidence",
+        "probabilities",
+        "type"
+      ],
+      "title": "ChoiceAnswer",
+      "type": "object"
+    },
+    "ChoiceQuestion": {
+      "description": "A question that selects one option from the choices you define.",
+      "properties": {
+        "criteria": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "description": "Choice names and descriptions of when each applies. A choice without a description is interpreted by its name alone.",
+          "examples": [
+            {
+              "angry": "An upset or hostile message",
+              "calm": "A neutral or polite message",
+              "excited": "An enthusiastic or eager message"
+            }
+          ],
+          "title": "Criteria",
+          "type": "object"
+        },
+        "instructions": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "items": {},
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "What the model should decide when choosing an option.",
+          "examples": [
+            "What is the tone of this message?"
+          ],
+          "title": "Instructions"
+        },
+        "type": {
+          "const": "choice",
+          "description": "Identifies a question that selects one of the choices in criteria.",
+          "examples": [
+            "choice"
+          ],
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "criteria",
+        "type"
+      ],
+      "title": "ChoiceQuestion",
+      "type": "object"
+    },
+    "HTTPValidationError": {
+      "description": "Request validation failures returned with HTTP status 422.",
+      "properties": {
+        "detail": {
+          "description": "Validation errors describing which request values are missing or invalid.",
+          "examples": [
+            [
+              {
+                "loc": [
+                  "body",
+                  "state"
+                ],
+                "msg": "Field required",
+                "type": "missing"
+              }
+            ]
+          ],
+          "items": {
+            "$ref": "#/$defs/ValidationError"
+          },
+          "title": "Detail",
+          "type": "array"
+        }
+      },
+      "title": "HTTPValidationError",
+      "type": "object"
+    },
+    "ModelMetadata": {
+      "description": "A model or model alias available to the authenticated account.",
+      "properties": {
+        "description": {
+          "description": "Human-readable description of the model and its capabilities.",
+          "examples": [
+            "General-purpose system one model."
+          ],
+          "title": "Description",
+          "type": "string"
+        },
+        "name": {
+          "description": "Model name or alias accepted by the request's model field.",
+          "examples": [
+            "jev-latest"
+          ],
+          "title": "Name",
+          "type": "string"
+        },
+        "release_date": {
+          "description": "Model release date, formatted as YYYY-MM-DD.",
+          "examples": [
+            "2026-09-15"
+          ],
+          "title": "Release Date",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "description",
+        "release_date"
+      ],
+      "title": "ModelMetadata",
+      "type": "object"
+    },
+    "ModelMetadataList": {
+      "description": "Models and aliases available to the authenticated account.",
+      "properties": {
+        "models": {
+          "description": "Available models and aliases. Use a model's name in POST /v1/systemone requests.",
+          "examples": [
+            [
+              {
+                "description": "General-purpose system one model.",
+                "name": "jev-latest",
+                "release_date": "2026-09-15"
+              }
+            ]
+          ],
+          "items": {
+            "$ref": "#/$defs/ModelMetadata"
+          },
+          "title": "Models",
+          "type": "array"
+        }
+      },
+      "required": [
+        "models"
+      ],
+      "title": "ModelMetadataList",
+      "type": "object"
+    },
+    "NoulAnswer": {
+      "description": "The probability of a yes answer or a true statement.",
+      "properties": {
+        "noul": {
+          "description": "Probability of a yes answer or a true statement, from 0 to 1. Values near 1 favor yes or true, values near 0 favor no or false, and values near 0.5 indicate uncertainty.",
+          "examples": [
+            0.98
+          ],
+          "title": "Noul",
+          "type": "number"
+        },
+        "type": {
+          "const": "noul",
+          "description": "Identifies a yes/no answer.",
+          "examples": [
+            "noul"
+          ],
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "noul",
+        "type"
+      ],
+      "title": "NoulAnswer",
+      "type": "object"
+    },
+    "NoulCriteria": {
+      "description": "Criteria defining what counts as a yes or no answer.",
+      "properties": {
+        "false": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "items": {},
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "What counts as a no answer.",
+          "examples": [
+            "The message is a legitimate conversation."
+          ],
+          "title": "False"
+        },
+        "true": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "items": {},
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "What counts as a yes answer.",
+          "examples": [
+            "The message is unsolicited advertising."
+          ],
+          "title": "True"
+        }
+      },
+      "title": "NoulCriteria",
+      "type": "object"
+    },
+    "NoulQuestion": {
+      "description": "A yes/no question or statement, answered with the probability of yes or true.",
+      "properties": {
+        "criteria": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/NoulCriteria"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Criteria clarifying what counts as a yes or no answer.",
+          "examples": [
+            {
+              "false": "A legitimate conversation",
+              "true": "Unsolicited advertising"
+            }
+          ]
+        },
+        "instructions": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "items": {},
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The yes/no question or statement to evaluate.",
+          "examples": [
+            "Is this message spam?",
+            "This message contains unsolicited advertising.",
+            {
+              "task": "Identify unsolicited advertising."
+            }
+          ],
+          "title": "Instructions"
+        },
+        "type": {
+          "const": "noul",
+          "description": "Identifies a yes/no question or statement.",
+          "examples": [
+            "noul"
+          ],
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "NoulQuestion",
+      "type": "object"
+    },
+    "Question": {
+      "description": "A question about the supplied content.",
+      "discriminator": {
+        "mapping": {
+          "choice": "#/$defs/ChoiceQuestion",
+          "noul": "#/$defs/NoulQuestion",
+          "score": "#/$defs/ScoreQuestion"
+        },
+        "propertyName": "type"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/NoulQuestion"
+        },
+        {
+          "$ref": "#/$defs/ChoiceQuestion"
+        },
+        {
+          "$ref": "#/$defs/ScoreQuestion"
+        }
+      ]
+    },
+    "ScoreAnswer": {
+      "description": "An expected score with its rubric, confidence, and score-level probabilities.",
+      "properties": {
+        "confidence": {
+          "description": "Confidence in the score, from 0 to 1. Higher values indicate greater certainty; use lower values to flag uncertain ratings for review.",
+          "examples": [
+            0.9
+          ],
+          "title": "Confidence",
+          "type": "number"
+        },
+        "legend": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "items": {},
+                "type": "array"
+              }
+            ]
+          },
+          "description": "The requested criteria mapped to their score levels, so you can interpret the score.",
+          "examples": [
+            {
+              "0": "Can wait",
+              "1": "Needs attention this week",
+              "2": "Needs attention today"
+            }
+          ],
+          "title": "Legend",
+          "type": "object"
+        },
+        "probabilities": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "description": "Probability of each score level, from 0 to 1, using the same keys as legend. Shows how likely the alternatives are; values sum to approximately 1.",
+          "examples": [
+            {
+              "0": 0.1,
+              "1": 0.1,
+              "2": 0.8
+            }
+          ],
+          "title": "Probabilities",
+          "type": "object"
+        },
+        "score": {
+          "description": "Expected score: the probability-weighted average of the rubric levels. May fall between integer levels.",
+          "examples": [
+            1.7
+          ],
+          "title": "Score",
+          "type": "number"
+        },
+        "type": {
+          "const": "score",
+          "description": "Identifies a rating against the requested score levels.",
+          "examples": [
+            "score"
+          ],
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "score",
+        "confidence",
+        "legend",
+        "probabilities",
+        "type"
+      ],
+      "title": "ScoreAnswer",
+      "type": "object"
+    },
+    "ScoreQuestion": {
+      "description": "A question that assigns a score using an ordered rubric.",
+      "properties": {
+        "criteria": {
+          "description": "Ordered descriptions of the score levels. Each description's position determines its score, starting at zero.",
+          "examples": [
+            [
+              "Can wait",
+              "Needs attention this week",
+              "Needs attention today"
+            ]
+          ],
+          "items": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "items": {},
+                "type": "array"
+              }
+            ]
+          },
+          "minItems": 1,
+          "title": "Criteria",
+          "type": "array"
+        },
+        "instructions": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "items": {},
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "What the model should rate.",
+          "examples": [
+            "How urgent is this message?"
+          ],
+          "title": "Instructions"
+        },
+        "type": {
+          "const": "score",
+          "description": "Identifies a question that rates the content using the levels in criteria.",
+          "examples": [
+            "score"
+          ],
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "criteria",
+        "type"
+      ],
+      "title": "ScoreQuestion",
+      "type": "object"
+    },
+    "SystemOneRequest": {
+      "description": "Content and named questions to evaluate together using a TypeSafe model.",
+      "properties": {
+        "model": {
+          "description": "Name or alias of the model to use. Available names are returned by GET /v1/models.",
+          "examples": [
+            "jev-latest"
+          ],
+          "title": "Model",
+          "type": "string"
+        },
+        "questions": {
+          "additionalProperties": {
+            "$ref": "#/$defs/Question"
+          },
+          "description": "Questions to ask about the content, each with a name you choose. The response uses those names to identify the answers.",
+          "examples": [
+            {
+              "billing": {
+                "instructions": "Is this message about billing?",
+                "type": "noul"
+              }
+            }
+          ],
+          "minProperties": 1,
+          "title": "Questions",
+          "type": "object"
+        },
+        "state": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "items": {},
+              "type": "array"
+            }
+          ],
+          "description": "The content all questions in this request refer to.",
+          "examples": [
+            "I was charged twice. Please help.",
+            {
+              "message": "Please help.",
+              "subject": "Duplicate charge"
+            }
+          ],
+          "title": "State"
+        }
+      },
+      "required": [
+        "model",
+        "questions",
+        "state"
+      ],
+      "title": "SystemOneRequest",
+      "type": "object"
+    },
+    "SystemOneResponse": {
+      "description": "Answers grouped by question name, with the model used and token usage.",
+      "properties": {
+        "answers": {
+          "additionalProperties": {
+            "$ref": "#/$defs/Answer"
+          },
+          "description": "Answers keyed by the question names supplied in the request. Each answer's type matches its question's type.",
+          "examples": [
+            {
+              "billing": {
+                "noul": 0.98,
+                "type": "noul"
+              }
+            }
+          ],
+          "minProperties": 1,
+          "title": "Answers",
+          "type": "object"
+        },
+        "model": {
+          "description": "Name of the model that answered the questions. May differ from the alias supplied in the request.",
+          "examples": [
+            "jev-latest"
+          ],
+          "title": "Model",
+          "type": "string"
+        },
+        "usage": {
+          "$ref": "#/$defs/Usage",
+          "description": "Input and output token counts for this evaluation.",
+          "examples": [
+            {
+              "input_tokens": 120,
+              "output_tokens": 12
+            }
+          ]
+        }
+      },
+      "required": [
+        "model",
+        "answers",
+        "usage"
+      ],
+      "title": "SystemOneResponse",
+      "type": "object"
+    },
+    "Usage": {
+      "description": "Token usage for the request.",
+      "properties": {
+        "input_tokens": {
+          "description": "Number of billable input tokens used to evaluate the request.",
+          "examples": [
+            120
+          ],
+          "title": "Input Tokens",
+          "type": "integer"
+        },
+        "output_tokens": {
+          "description": "Number of output tokens used to answer the questions. Output tokens are currently free of charge.",
+          "examples": [
+            12
+          ],
+          "title": "Output Tokens",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "input_tokens",
+        "output_tokens"
+      ],
+      "title": "Usage",
+      "type": "object"
+    },
+    "ValidationError": {
+      "description": "A request validation error at a specific field or array element.",
+      "properties": {
+        "ctx": {
+          "description": "Additional context used to explain the validation failure.",
+          "examples": [
+            {
+              "min_length": 1
+            }
+          ],
+          "title": "Context",
+          "type": "object"
+        },
+        "input": {
+          "description": "The input value that failed validation.",
+          "examples": [
+            {
+              "type": "score"
+            }
+          ],
+          "title": "Input"
+        },
+        "loc": {
+          "description": "Path to the invalid value: the request location followed by field names and array indices.",
+          "examples": [
+            [
+              "body",
+              "questions",
+              "urgency",
+              "score",
+              "criteria"
+            ]
+          ],
+          "items": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "title": "Location",
+          "type": "array"
+        },
+        "msg": {
+          "description": "Human-readable explanation of the validation failure.",
+          "examples": [
+            "Field required"
+          ],
+          "title": "Message",
+          "type": "string"
+        },
+        "type": {
+          "description": "Machine-readable validation error code.",
+          "examples": [
+            "missing"
+          ],
+          "title": "Error Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "loc",
+        "msg",
+        "type"
+      ],
+      "title": "ValidationError",
+      "type": "object"
+    }
+  },
+  "$ref": "#/$defs/SystemOneRequest",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SystemOneRequest",
+  "x-source": "priv/upstream/openapi.json",
+  "x-typesafe-sdk-version": "0.2.0"
+}

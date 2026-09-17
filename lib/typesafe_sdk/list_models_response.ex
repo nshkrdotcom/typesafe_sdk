@@ -4,12 +4,13 @@ defmodule TypeSafeSDK.ListModelsResponse do
   alias TypeSafeSDK.{Error, ModelMetadata, TransportResponse}
 
   @enforce_keys [:models]
-  defstruct [:models, :request_id, :raw_http_response]
+  defstruct [:models, :request_id, :raw_http_response, :raw, retries: 0, elapsed_ms: 0]
 
   @type t :: %__MODULE__{
           models: [ModelMetadata.t()],
           request_id: String.t() | nil,
-          raw_http_response: Pristine.Response.t() | nil
+          raw_http_response: Pristine.Response.t() | nil, raw: map() | nil,
+          retries: non_neg_integer(), elapsed_ms: number()
         }
 
   @spec decode(term()) :: {:ok, t()} | {:error, Error.t()}
@@ -20,7 +21,8 @@ defmodule TypeSafeSDK.ListModelsResponse do
          %{
            response
            | request_id: transport.request_id,
-             raw_http_response: transport.raw_http_response
+             raw_http_response: transport.raw_http_response,
+             retries: transport.retries, elapsed_ms: transport.elapsed_ms
          }}
 
       {:error, %Error{} = error} ->
@@ -30,7 +32,11 @@ defmodule TypeSafeSDK.ListModelsResponse do
 
   def decode(body) when is_map(body) do
     case Map.get(body, "models") || Map.get(body, :models) do
-      models when is_list(models) -> decode_models(models)
+      models when is_list(models) ->
+        case decode_models(models) do
+          {:ok, response} -> {:ok, %{response | raw: body}}
+          error -> error
+        end
       other -> {:error, Error.response_validation("models", other)}
     end
   end

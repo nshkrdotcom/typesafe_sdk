@@ -1,4 +1,4 @@
-# Python 0.6.0 -> Elixir 0.1.0 parity map
+# Python 0.6.0 -> Elixir 0.2.0 parity map
 
 This file is a handoff index, not an additional runtime specification. The
 supplied Python `typesafe-sdk` 0.6.0 repository remains the semantic oracle for
@@ -43,3 +43,19 @@ Retry parity uses the locally completed contract in `PREREQUISITE_PRISTINE_0.3.0
 Do not replace that prerequisite with 100 exact 5xx overrides. The completed
 Pristine 0.3.0 provider profile supports an inclusive `500..599` range with
 exact-status precedence, verified through the real classifier and SDK pipeline.
+
+## 0.2.0 semantic additions above parity
+
+The table above describes the preserved wire-oriented system_one/list_models
+surface. Strict Question.* constructors, prepare/evaluate, caller identity,
+relational validation, enriched answers, batch execution, application fixtures,
+semantic telemetry, schema export and decision evaluation are provider-owned
+Elixir additions. The underlying generated operations and Pristine execution
+path are unchanged. In particular, protected `extra_body` behavior applies to
+strict evaluate only; legacy system_one retains last-write-wins overrides.
+
+Known probability ranges, nonnegative usage and normalized-key collision checks
+are stronger than the old shallow decoder. Unknown future answer types still
+skip typed decoding and are now retained explicitly in raw/unknown_answers.
+The strict semantic level/option limits are not retroactively attributed to
+Python 0.6.0 or the committed OpenAPI wire schema. See guides/migration-0.2.md.

@@ -1,28 +1,37 @@
 # Guide Index
 
-## Start here
+## Start and migrate
 
-- [Getting started](getting-started.md): install the SDK, configure credentials,
-  create a client, and make your first evaluation.
-- [Live API example](../examples/README.md): run both operations and inspect real
-  typed responses, including probabilities and usage.
+- [Getting started](getting-started.md)
+- [Migrating to 0.2.0](migration-0.2.md)
+- [Cheatsheet](../cheatsheets/typesafe_sdk.cheatmd)
 
-## API usage
+## Questions, answers and execution
 
-- [Client configuration](client-configuration.md): credentials, models, timeouts,
-  and per-call overrides.
-- [System One and questions](system-one-and-questions.md): construct Noul, Choice,
-  and Score questions and read their answers.
-- [Models](models.md): discover available models and select one.
-- [Errors and retries](errors-and-retries.md): handle failures and control retries.
+- [Semantic questions and prepared sets](semantic-questions.md)
+- [Answers, distributions and confidence](answers-and-confidence.md)
+- [Batching and lifecycle](batching.md)
+- [Application testing](testing.md)
+- [Telemetry and privacy](telemetry.md)
+- [Client configuration](client-configuration.md)
+- [Errors, retries and replay ambiguity](errors-and-retries.md)
+- [Runtime capabilities](runtime-capabilities.md)
+- [Legacy System One wire API](system-one-and-questions.md)
+- [Models](models.md)
 
-## Maintenance
+## Application patterns and evaluation
 
-- [Generation and verification](generation-and-verification.md): maintain the
-  committed generated API surface and run offline or live checks.
-- [Upstream provenance](upstream-provenance.md): reviewed API schema and Python parity.
+- [Confidence routing](confidence-routing.md)
+- [Composite scoring](composite-scoring.md)
+- [Speculative read-only fan-out](speculative-fan-out.md)
+- [Evaluating decisions](evaluating-decisions.md)
+- [Runnable labeled workflow](../examples/evaluation/README.md)
+- [Original live API example](../examples/README.md)
 
-## Project
+## Contracts and maintenance
 
+- [JSON Schema export](json-schemas.md)
+- [Generation and verification](generation-and-verification.md)
+- [Upstream provenance](upstream-provenance.md)
 - [Changelog](../CHANGELOG.md)
 - [MIT license](../LICENSE)

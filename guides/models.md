@@ -19,3 +19,12 @@ TypeSafeSDK.system_one(client, state, questions, model: "jev-latest")
 
 The evaluation response reports the model that actually handled the request;
 an alias such as `jev-latest` may resolve to a concrete version.
+
+## Response metadata and reproducible evaluation
+
+The model-list response also retains raw JSON, request ID, raw HTTP response,
+retry count and elapsed milliseconds. `Test.stub_models/3` exercises the same
+list-model decoding path. For repeated evaluations, choose a concrete model
+version from the list rather than assuming an alias is immutable; record the
+actual returned model and request IDs. The bundled evaluation workflow freezes
+an observed model with its development policy for held-out runs.

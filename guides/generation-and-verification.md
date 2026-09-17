@@ -48,3 +48,21 @@ After generation, run formatting, compilation with warnings as errors, tests,
 Credo, Dialyzer, docs with warnings as errors, and generated-file verification before
 building a package. Review upstream changes intentionally; a documentation-only
 release does not require refreshing the API snapshot.
+
+## 0.2.0 schema, compatibility and live capture gates
+
+Run `mix typesafe.schema.verify` alongside generated-code verification. To
+intentionally update exports after an upstream source change, run
+`mix typesafe.schema.export`; neither verification task refreshes or approves
+new source automatically. `scripts/check_handoff.sh` executes the offline QC
+sequence without first regenerating files (which could hide stale artifacts).
+
+CI targets Elixir/OTP 1.18.4/27.3, 1.19.5/28.3.1 and 1.20.4/29.0.6. These are
+configured compatibility targets, not a substitute for green matrix results.
+`mix typesafe.record` makes two real synthetic-input calls, saves raw response
+bodies and metadata, and produces diffs against `test/fixtures/live`. No real
+recordings are bundled until a credentialed run has been reviewed. The scheduled
+workflow requires repository variable TYPESAFE_LIVE_ENABLED=true and secret
+TYPESAFE_API_KEY. It never runs on pull requests, silently fabricates fixtures,
+or commits changes. Probability differences require interpretation, not blanket
+byte-for-byte stability claims.

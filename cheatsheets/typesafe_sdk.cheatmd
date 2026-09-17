@@ -1,0 +1,79 @@
+# TypeSafeSDK 0.2.0
+
+## Client and questions
+{: .col-2}
+
+### Strict semantic API
+
+```elixir
+client = TypeSafeSDK.new_client()
+questions = [
+  urgent: TypeSafeSDK.noul("Urgent?"),
+  team: TypeSafeSDK.choice("Team?", billing: "Payments", technical: "Product"),
+  severity: TypeSafeSDK.score("Severity?", ["Low", "High"])
+]
+prepared = TypeSafeSDK.prepare!(questions)
+{:ok, response} = TypeSafeSDK.evaluate(client, state, prepared)
+```
+
+### Tuple constructors
+
+```elixir
+TypeSafeSDK.Question.Noul.new("Urgent?", true: "Time-sensitive")
+TypeSafeSDK.Question.Choice.new("Team?", [billing: nil, technical: nil])
+TypeSafeSDK.Question.Score.new("Severity?", ["Low", "High"])
+```
+
+Each also has `new!`. Legacy `TypeSafeSDK.Noul/Choice/Score.new` still returns
+legacy structs; `system_one` still uses string response keys.
+
+## Answers and policy
+{: .col-2}
+
+```elixir
+team = TypeSafeSDK.Response.fetch!(response, :team)
+TypeSafeSDK.Answer.Choice.ranked(team)
+TypeSafeSDK.Answer.Choice.margin(team)
+TypeSafeSDK.Answer.confidence(team)
+TypeSafeSDK.Answer.gate(team, act: 0.9, review: 0.7)
+TypeSafeSDK.Answer.yes?(response.answers.urgent, 0.85)
+TypeSafeSDK.Answer.Score.expected_level(response.answers.severity)
+TypeSafeSDK.Answer.Score.max_level(response.answers.severity)
+TypeSafeSDK.Answer.Score.normalized(response.answers.severity)
+```
+
+Thresholds are explicit application policy, not safety guarantees. Expected and
+modal Score levels differ; Noul confidence is derived as max(p, 1-p).
+
+## Batch, errors and tests
+{: .col-2}
+
+```elixir
+TypeSafeSDK.evaluate_many(client, states, prepared,
+  max_concurrency: 8, max_pending: 32, ordered: true, on_error: :collect,
+  task_timeout_ms: 40_000, attempt_timeout_ms: 5_000)
+TypeSafeSDK.evaluate_stream(client, states, prepared, ordered: false)
+TypeSafeSDK.Error.retryable?(error)
+TypeSafeSDK.Error.retry_after(error)
+
+client = TypeSafeSDK.Test.client()
+client = TypeSafeSDK.Test.stub(client, urgent: {:noul, 0.9})
+# Run application code, then verify before the creating process exits.
+TypeSafeSDK.Test.verify!(client)
+TypeSafeSDK.Test.close(client)
+```
+
+Unordered results have batch_index; errors use details.batch_index. Request
+`timeout` and retry policy values still use seconds. Retries can repeat processing.
+
+## Contract and operations tools
+
+```bash
+mix typesafe.schema.export
+mix typesafe.schema.verify
+mix typesafe.capabilities
+mix typesafe.record --output tmp/live
+```
+
+Recording needs a real API key; no live data is fabricated. Unadvertised transport
+bounds remain unverified. Semantic telemetry excludes automatic prompt/state data.

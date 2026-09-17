@@ -1,9 +1,27 @@
 defmodule TypeSafeSDK.Question do
-  @moduledoc false
+  @moduledoc "Question validation and legacy wire normalization. Strict evaluation uses `TypeSafeSDK.Prepared`."
 
   alias TypeSafeSDK.{Choice, Error, Noul, Score}
 
   @type t :: Noul.t() | Choice.t() | Score.t() | map()
+
+  @doc "Validates one question with strict semantic rules, without sending HTTP."
+  @spec validate(term()) :: :ok | {:error, Error.t()}
+  def validate(question) do
+    case TypeSafeSDK.Question.Validation.compile(question, []) do
+      {:ok, _} -> :ok
+      error -> error
+    end
+  end
+
+  @doc "Validates and returns the question, or raises a path-aware SDK error."
+  @spec validate!(term()) :: term()
+  def validate!(question) do
+    case validate(question) do
+      :ok -> question
+      {:error, error} -> raise error
+    end
+  end
 
   @spec normalize_questions(map()) :: {:ok, map()} | {:error, Error.t()}
   def normalize_questions(questions) when is_map(questions) and map_size(questions) > 0 do

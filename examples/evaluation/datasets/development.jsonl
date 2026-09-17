@@ -1,0 +1,12 @@
+{"id": "dev-01", "split": "development", "state": "I was charged twice for my monthly subscription. Please refund the duplicate.", "departments": ["billing"], "routes": ["billing"]}
+{"id": "dev-02", "split": "development", "state": "The API returns 503 for every request and our production checkout is down right now.", "departments": ["technical"], "routes": ["urgent"]}
+{"id": "dev-03", "split": "development", "state": "Do you offer an annual plan for a team of twenty?", "departments": ["sales"], "routes": ["sales"]}
+{"id": "dev-04", "split": "development", "state": "Could you explain the VAT line on this invoice?", "departments": ["billing"], "routes": ["billing"]}
+{"id": "dev-05", "split": "development", "state": "The settings page has a small alignment issue, but everything works.", "departments": ["technical"], "routes": ["technical"]}
+{"id": "dev-06", "split": "development", "state": "I need to change the credit card used for renewals.", "departments": ["billing"], "routes": ["billing"]}
+{"id": "dev-07", "split": "development", "state": "We want higher API limits and need a quote; we also saw a few retryable errors.", "departments": ["sales", "technical"], "routes": ["review", "sales", "technical"]}
+{"id": "dev-08", "split": "development", "state": "Nobody can sign in and our launch starts in ten minutes.", "departments": ["technical"], "routes": ["urgent"]}
+{"id": "dev-09", "split": "development", "state": "Can your product export our reports as CSV? We are evaluating vendors.", "departments": ["sales"], "routes": ["sales"]}
+{"id": "dev-10", "split": "development", "state": "I cannot tell whether this payment failed or the screen froze. Please investigate.", "departments": ["billing", "technical"], "routes": ["review", "billing", "technical"]}
+{"id": "dev-11", "split": "development", "state": "We are locked out and suspect unauthorized changes to our administrator account.", "departments": ["technical"], "routes": ["urgent"]}
+{"id": "dev-12", "split": "development", "state": "Please send last month's receipt when you have a moment.", "departments": ["billing"], "routes": ["billing"]}

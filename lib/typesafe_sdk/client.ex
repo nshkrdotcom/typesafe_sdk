@@ -73,6 +73,7 @@ defmodule TypeSafeSDK.Client do
       transport_opts: transport_opts
     }
 
+    TypeSafeSDK.RuntimeCapabilities.require!(client, Keyword.get(opts, :runtime_requirements, []))
     context = build_context(client)
     %{client | context: context, pristine_client: RuntimeClient.from_context(context)}
   end
