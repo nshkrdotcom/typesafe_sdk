@@ -1,6 +1,17 @@
 # Errors And Retries
 
 Network/API calls return `{:ok, value}` or `{:error, %TypeSafeSDK.Error{}}`.
+
+```elixir
+case TypeSafeSDK.list_models(client) do
+  {:ok, response} ->
+    Enum.map(response.models, & &1.name)
+
+  {:error, %TypeSafeSDK.Error{type: type, status: status, message: message}} ->
+    IO.inspect(%{type: type, status: status, message: message}, label: "API failure")
+end
+```
+
 `error.type` uses these primary values:
 
 - `:bad_request` (400)

@@ -20,9 +20,16 @@ HTTP execution, retries, and transport are provided by Pristine 0.3.0.
 
 ```elixir
 def deps do
-  [{:typesafe_sdk, "~> 0.1.0"}]
+  [{:typesafe_sdk, "~> 0.1.1"}]
 end
 ```
+
+## Documentation
+
+- [Guide index](guides/index.md) — installation, configuration, and API usage.
+- [Live API example](examples/README.md) — run both operations and inspect structured output.
+- [Changelog](CHANGELOG.md) — release history.
+- [License](LICENSE) — MIT license.
 
 ## Quick start
 

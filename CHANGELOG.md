@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.1.1 - 2026-09-16
+
+### Added
+
+- Runnable live API example showing model metadata, typed questions, structured
+  answers, probabilities, confidence, and token usage; included in the Hex package.
+- Guide index and organized documentation menus for getting started, usage,
+  examples, maintenance, and project information.
+- MIT License page in the documentation navigation and grouped API module reference.
+
+### Improved
+
+- Expanded installation, configuration, response handling, and question guides.
+- Corrected the documented Noul criteria shape and minimum of two score levels.
+- Updated publishing instructions for the standalone 0.1.1 SDK patch release.
+
 ## 0.1.0 - 2026-09-16
 
 - Refresh all direct dependency requirements to current stable releases and update

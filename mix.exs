@@ -3,7 +3,7 @@ if bootstrap = System.get_env("MIX_WORKSPACE_OPS_BOOTSTRAP"), do: Code.require_f
 defmodule TypeSafeSDK.MixProject do
   use Mix.Project
 
-  @version "0.1.0"
+  @version "0.1.1"
   @source_url "https://github.com/nshkrdotcom/typesafe_sdk"
 
   def project do
@@ -72,7 +72,7 @@ defmodule TypeSafeSDK.MixProject do
     [
       name: "typesafe_sdk",
       description: description(),
-      files: ~w(lib priv/upstream guides README.md CHANGELOG.md LICENSE mix.exs assets),
+      files: ~w(lib priv/upstream guides examples README.md CHANGELOG.md LICENSE mix.exs assets),
       licenses: ["MIT"],
       links: %{"GitHub" => @source_url},
       maintainers: ["nshkrdotcom"]
@@ -88,26 +88,62 @@ defmodule TypeSafeSDK.MixProject do
       logo: "assets/typesafe_sdk.svg",
       assets: %{"assets" => "assets"},
       extras: [
-        "README.md",
+        {"README.md", title: "Overview"},
+        {"guides/index.md", title: "Guide Index", filename: "guide-index"},
         "guides/getting-started.md",
+        {"examples/README.md", title: "Live API Example", filename: "live-example"},
         "guides/client-configuration.md",
         "guides/system-one-and-questions.md",
         "guides/models.md",
         "guides/errors-and-retries.md",
         "guides/generation-and-verification.md",
         "guides/upstream-provenance.md",
-        "CHANGELOG.md"
+        "CHANGELOG.md",
+        {"LICENSE", title: "License", filename: "license"}
       ],
       groups_for_extras: [
-        Overview: ["README.md", "guides/getting-started.md"],
+        "Start Here": ["README.md", "guides/index.md", "guides/getting-started.md"],
         Usage: [
           "guides/client-configuration.md",
           "guides/system-one-and-questions.md",
           "guides/models.md",
           "guides/errors-and-retries.md"
         ],
+        Examples: ["examples/README.md"],
         Maintainers: ["guides/generation-and-verification.md", "guides/upstream-provenance.md"],
-        Releases: ["CHANGELOG.md"]
+        Project: ["CHANGELOG.md", "LICENSE"]
+      ],
+      groups_for_modules: [
+        "Client and Operations": [
+          TypeSafeSDK,
+          TypeSafeSDK.Client,
+          TypeSafeSDK.SystemOne,
+          TypeSafeSDK.Models
+        ],
+        Questions: [
+          TypeSafeSDK.Noul,
+          TypeSafeSDK.NoulCriteria,
+          TypeSafeSDK.Choice,
+          TypeSafeSDK.Score,
+          TypeSafeSDK.Question
+        ],
+        Responses: [
+          TypeSafeSDK.SystemOneResponse,
+          TypeSafeSDK.ListModelsResponse,
+          TypeSafeSDK.ModelMetadata,
+          TypeSafeSDK.NoulAnswer,
+          TypeSafeSDK.ChoiceAnswer,
+          TypeSafeSDK.ScoreAnswer,
+          TypeSafeSDK.Usage
+        ],
+        "Errors and Configuration": [
+          TypeSafeSDK.Error,
+          TypeSafeSDK.RetryPolicy,
+          TypeSafeSDK.Constants
+        ],
+        "Generated API": ~r/^TypeSafeSDK\.Generated\./,
+        "Runtime Integration": ~r/^TypeSafeSDK\.(ProviderProfile|ResultClassifier|Transport)/,
+        "Maintenance Tasks": ~r/^Mix\.Tasks\.Typesafe\./
       ]
     ]
   end

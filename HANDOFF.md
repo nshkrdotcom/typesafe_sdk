@@ -1,4 +1,21 @@
-# TypeSafeSDK 0.1.0 handoff
+# TypeSafeSDK handoff
+
+## Current release: 0.1.1
+
+Documentation/example patch over 0.1.0. Includes the live evaluation script in
+the package, a guide index, grouped guide/API navigation, and the MIT License
+page. Installation, configuration, question, response, and maintenance guides
+are updated. Runtime behavior and generated API source are unchanged.
+
+Validation: formatting, documentation with warnings as errors, and Hex package
+build. The unpacked distribution resolves published Hex dependencies and builds
+its docs without checkout-only generation tooling. The live example was already
+verified against both API operations before this documentation update.
+
+Follow the 0.1.1 commands at the top of `PUBLISHING.md`. Only the SDK needs
+publishing; no Pristine or Execution Plane release is required.
+
+## Historical 0.1.0 handoff
 
 ## Local completion — 2026-09-16
 

@@ -27,7 +27,8 @@ The output shows:
 The two operations return `ListModelsResponse` and `SystemOneResponse`. The script
 prints their useful fields without the raw HTTP metadata. Values come from the
 live service and can vary between runs. Edit `state` and `questions` in
-[`live_evaluation.exs`](live_evaluation.exs) to try your own input.
+[`live_evaluation.exs`](https://github.com/nshkrdotcom/typesafe_sdk/blob/main/examples/live_evaluation.exs)
+to try your own input. The script is also included under `examples/` in the Hex package.
 
 For a source checkout using local Pristine tooling, the existing workstation
 wrapper also works:

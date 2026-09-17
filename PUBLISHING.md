@@ -1,4 +1,24 @@
-# Publish the minimum TypeSafe release chain
+# Publish TypeSafeSDK 0.1.1
+
+This is an SDK documentation/example patch release. Pristine 0.3.0 and
+Execution Plane HTTP 0.1.0 are existing prerequisites; do not republish them.
+
+From the source checkout, build the distribution, then publish from it so local
+generation tooling is excluded:
+
+```bash
+unset MIX_WORKSPACE_OPS_BOOTSTRAP MIX_WORKSPACE_OPS_OVERLAY
+cd ~/p/g/n/typesafe_sdk
+mix hex.build --unpack
+cd typesafe_sdk-0.1.1
+mix deps.get && mix hex.publish
+```
+
+The distribution includes the live example, all guides, and MIT LICENSE. Docs
+navigation includes the license and live example. No `--replace` is needed for
+this new version. Publication remains the owner's action.
+
+## Historical 0.1.0 release chain
 
 Prepared on 2026-09-16. All three packages have refreshed direct dependency
 requirements and lockfiles. Execution Plane core **0.3.0 is already on Hex**;
