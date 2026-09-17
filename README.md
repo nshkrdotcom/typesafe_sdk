@@ -100,6 +100,18 @@ Library runtime modules do not read environment variables. In this checkout,
 `TYPESAFE_DEFAULT_MODEL`, and `TYPESAFE_LOG_LEVEL`. Host applications can pass
 options directly or set application configuration in their own `runtime.exs`.
 
+## Live example
+
+Print real model data, typed questions, structured answers, and token usage:
+
+```bash
+# With TYPESAFE_API_KEY exported, run from the repository root:
+mix run examples/live_evaluation.exs
+```
+
+See [examples/README.md](https://github.com/nshkrdotcom/typesafe_sdk/blob/main/examples/README.md)
+for the secrets-helper command and an explanation of the output.
+
 ## Tests
 
 The default suite uses fixtures and a mocked transport through the real Pristine
