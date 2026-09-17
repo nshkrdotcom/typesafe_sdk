@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.4.0 - 2026-09-17
+## [0.4.0] - 2026-09-17
 
 ### Added
 
@@ -36,7 +36,7 @@
   there, so formatting, compilation, ExUnit, Reach, Credo, Dialyzer, ExDoc, schema
   verification, generated-artifact verification, live API checks and Hex build are
   explicit target-host gates in `HANDOFF.md`.
-## 0.3.0 - 2026-09-17
+## [0.3.0] - 2026-09-17
 
 ### Added
 
@@ -81,7 +81,7 @@
   generated-artifact verification, live fixtures and Hex build remain explicit
   target-environment gates. See `HANDOFF.md` and `VERIFICATION.md`.
 
-## 0.2.0 - 2026-09-17
+## [0.2.0] - 2026-09-17
 
 ### Added
 
@@ -141,14 +141,14 @@
   for execution evidence; this is not a claim of Hex publication.
 
 
-## 0.1.2 - 2026-09-16
+## [0.1.2] - 2026-09-16
 
 ### Improved
 
 - Expanded README with comprehensive System One decision model guides, typed question
   workflows, and SDK architecture documentation.
 
-## 0.1.1 - 2026-09-16
+## [0.1.1] - 2026-09-16
 
 ### Added
 
@@ -164,7 +164,7 @@
 - Corrected the documented Noul criteria shape and minimum of two score levels.
 - Updated publishing instructions for the standalone 0.1.1 SDK patch release.
 
-## 0.1.0 - 2026-09-16
+## [0.1.0] - 2026-09-16
 
 - Refresh all direct dependency requirements to current stable releases and update
   the complete resolved dependency graph (2026-09-16).
@@ -189,3 +189,10 @@
   conversion from the source plugin.
 - Made per-call retry status sets and `respect_retry_after` affect actual Pristine
   classification, not only Foundation backoff options.
+
+[0.4.0]: https://github.com/nshkrdotcom/typesafe_sdk/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/nshkrdotcom/typesafe_sdk/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/nshkrdotcom/typesafe_sdk/compare/v0.1.2...v0.2.0
+[0.1.2]: https://github.com/nshkrdotcom/typesafe_sdk/compare/v0.1.1...v0.1.2
+[0.1.1]: https://github.com/nshkrdotcom/typesafe_sdk/compare/v0.1.0...v0.1.1
+[0.1.0]: https://github.com/nshkrdotcom/typesafe_sdk/releases/tag/v0.1.0
