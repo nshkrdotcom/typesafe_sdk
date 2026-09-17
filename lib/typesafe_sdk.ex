@@ -10,7 +10,7 @@ defmodule TypeSafeSDK do
   alias TypeSafeSDK.{Client, Models, SystemOne}
   alias TypeSafeSDK.Question.Validation
 
-  @version "0.2.0"
+  @version "0.3.0"
 
   @spec version() :: String.t()
   def version, do: @version

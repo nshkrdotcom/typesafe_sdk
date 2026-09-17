@@ -1,4 +1,4 @@
-# TypeSafeSDK 0.2.0
+# TypeSafeSDK 0.3.0
 
 ## Client and questions
 {: .col-2}
@@ -77,3 +77,24 @@ mix typesafe.record --output tmp/live
 
 Recording needs a real API key; no live data is fabricated. Unadvertised transport
 bounds remain unverified. Semantic telemetry excludes automatic prompt/state data.
+
+
+## 0.3 runtime controls
+{: .col-2}
+
+```elixir
+cancel = Pristine.Cancellation.new()
+{:ok, response} = TypeSafeSDK.evaluate(client, state, prepared,
+  cancellation: cancel,
+  max_request_bytes: 262_144,
+  response_contract: [on_unknown_answer: :error])
+
+TypeSafeSDK.Prepared.keys(prepared)
+TypeSafeSDK.Prepared.fingerprint(prepared)
+TypeSafeSDK.Response.metadata(response)
+TypeSafeSDK.RuntimeCapabilities.report(client)
+```
+
+Per-call retry keys inherit omitted client retry fields; `retry: false` disables
+retry for that call. Cancellation uses Pristine directly and cannot prove that a
+remote service did not begin processing a request.

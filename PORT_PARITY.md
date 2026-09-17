@@ -59,3 +59,17 @@ are stronger than the old shallow decoder. Unknown future answer types still
 skip typed decoding and are now retained explicitly in raw/unknown_answers.
 The strict semantic level/option limits are not retroactively attributed to
 Python 0.6.0 or the committed OpenAPI wire schema. See guides/migration-0.2.md.
+
+## 0.3.0 runtime and semantic additions
+
+0.3.0 preserves the wire/parity surface above while moving the runtime prerequisite
+to Pristine `~> 0.4.0`. The earlier `PREREQUISITE_PRISTINE_0.3.0.md` remains a
+historical record of the status-range work used by 0.2; it is not the current
+runtime target.
+
+The 0.3 semantic layer adds direct `Pristine.Cancellation` forwarding,
+Pristine-owned capability discovery, structural retry-policy inheritance,
+Prepared composition/fingerprints, opt-in strict response contracts, local
+serialized-request byte budgets, pure model catalog helpers, and stable bounded
+metadata. None of these additions creates a TypeSafe HTTP stack, retry engine,
+transport cancellation implementation, global queue, or circuit breaker.

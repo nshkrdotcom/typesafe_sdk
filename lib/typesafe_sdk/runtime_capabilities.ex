@@ -1,55 +1,49 @@
 defmodule TypeSafeSDK.RuntimeCapabilities do
   @moduledoc """
-  Fail-closed reporting of transport capabilities, without inventing Pristine APIs.
+  Fail-closed TypeSafe-facing view of Pristine transport capabilities.
 
-  The supplied Pristine integration establishes no contract for global queue
-  bounds, a streaming response-byte cap, or physical cancellation cleanup.
-  Missing capabilities report `:unverified`, not `false` or "supported".
-
-  An adapter may implement `typesafe_capabilities(transport_opts)` (preferred) or
-  `typesafe_capabilities/0`, returning a map. Numeric bounds are positive integers
-  (`bounded_queue` also accepts zero); `deterministic_overload` and
-  `cancellation_cleanup` must be `true`. Reports label these **advertised**, not
-  independently verified. Adapter contract tests must prove actual enforcement.
+  Discovery delegates exclusively to `Pristine.RuntimeCapabilities.transport/1`.
+  TypeSafe does not infer support from adapter names or optional callbacks and
+  never exposes transport context/options through this report.
   """
-  alias TypeSafeSDK.Error
+
+  alias TypeSafeSDK.{Client, Error}
 
   @capabilities [
+    :unary_cancellation,
+    :cancellation_cleanup,
     :bounded_outstanding_requests,
     :bounded_queue,
     :max_response_bytes,
-    :deterministic_overload,
-    :cancellation_cleanup
+    :deterministic_overload
   ]
 
   @spec names() :: [atom()]
   def names, do: @capabilities
 
-  @spec report(TypeSafeSDK.Client.t() | map()) :: map()
-  def report(%{transport: transport, transport_opts: opts}) do
-    advertised = advertisement(transport, opts)
+  @spec report(Client.t() | Pristine.Client.t() | Pristine.Core.Context.t()) :: map()
+  def report(source) do
+    pristine = Pristine.RuntimeCapabilities.transport(pristine_source(source))
 
     runtime =
-      Map.new(@capabilities, fn name ->
-        value = Map.get(advertised, name)
-        result = if valid?(name, value), do: %{status: :advertised, value: value}, else: :unverified
-        {name, result}
+      Map.new(@capabilities, fn capability ->
+        {capability, Map.get(pristine.capabilities, capability, %{status: :unverified})}
       end)
 
     %{
-      transport: inspect(transport),
+      transport: inspect(pristine.adapter),
       runtime: runtime,
       sdk: %{
         batch_concurrency: :bounded_per_enumeration,
         batch_queue: :lazy_enumeration,
         ordered_prefetch: :bounded_windows,
-        batch_cancellation: :owned_tasks_only
+        batch_cancellation: :shared_pristine_token
       },
-      assurance: :adapter_advertisement_requires_contract_tests
+      assurance: :pristine_transport_contract
     }
   end
 
-  @spec check(map(), [atom()]) ::
+  @spec check(Client.t() | Pristine.Client.t() | Pristine.Core.Context.t(), [atom()]) ::
           :ok | {:error, Error.t()}
   def check(_client, []), do: :ok
 
@@ -58,18 +52,24 @@ defmodule TypeSafeSDK.RuntimeCapabilities do
 
     missing =
       Enum.reject(requirements, fn name ->
-        name in @capabilities and match?(%{status: :advertised}, Map.get(runtime, name))
+        is_atom(name) and get_in(runtime, [name, :status]) == :supported
       end)
 
-    if missing == [],
-      do: :ok,
-      else:
-        {:error,
-         %Error{
-           type: :runtime_capability,
-           message: "Required runtime capabilities are not advertised: #{inspect(missing)}",
-           details: %{missing: missing, assurance: :unverified}
-         }}
+    if missing == [] do
+      :ok
+    else
+      statuses =
+        Map.new(missing, fn name ->
+          {name, get_in(runtime, [name, :status]) || :unverified}
+        end)
+
+      {:error,
+       %Error{
+         type: :runtime_capability,
+         message: "Required runtime capabilities are not supported: #{inspect(missing)}",
+         details: %{missing: missing, statuses: statuses}
+       }}
+    end
   end
 
   def check(_, _),
@@ -77,7 +77,7 @@ defmodule TypeSafeSDK.RuntimeCapabilities do
       {:error,
        Error.invalid_request(["runtime_requirements"], "must be a list of capability atoms")}
 
-  @spec require!(map(), [atom()]) :: :ok
+  @spec require!(Client.t() | Pristine.Client.t() | Pristine.Core.Context.t(), [atom()]) :: :ok
   def require!(client, requirements) do
     case check(client, requirements) do
       :ok -> :ok
@@ -85,34 +85,7 @@ defmodule TypeSafeSDK.RuntimeCapabilities do
     end
   end
 
-  defp advertisement(transport, opts) do
-    if Code.ensure_loaded?(transport) do
-      result =
-        cond do
-          function_exported?(transport, :typesafe_capabilities, 1) ->
-            transport.typesafe_capabilities(opts)
-
-          function_exported?(transport, :typesafe_capabilities, 0) ->
-            transport.typesafe_capabilities()
-
-          true ->
-            %{}
-        end
-
-      if is_map(result) and not is_struct(result), do: result, else: %{}
-    else
-      %{}
-    end
-  rescue
-    _ -> %{}
-  catch
-    _, _ -> %{}
-  end
-
-  defp valid?(:bounded_queue, value), do: is_integer(value) and value >= 0
-
-  defp valid?(name, value) when name in [:bounded_outstanding_requests, :max_response_bytes],
-    do: is_integer(value) and value > 0
-
-  defp valid?(_, value), do: value == true
+  defp pristine_source(%Client{pristine_client: %Pristine.Client{} = client}), do: client
+  defp pristine_source(%Pristine.Client{} = client), do: client
+  defp pristine_source(%Pristine.Core.Context{} = context), do: context
 end

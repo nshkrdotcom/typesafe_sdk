@@ -1,5 +1,50 @@
 # Changelog
 
+## 0.3.0 - 2026-09-17
+
+### Added
+
+- Verified unary cancellation forwarding with `Pristine.Cancellation`, typed
+  cancellation preservation, and Pristine-owned capability discovery for
+  `:unary_cancellation` and `:cancellation_cleanup`.
+- Cancellation-aware bounded batch scheduling: one shared token is forwarded to
+  started requests and no additional work is scheduled after cancellation is
+  observed; existing task/lifecycle cleanup remains authoritative.
+- Client-level retry defaults with structural per-call inheritance/override and
+  explicit `false` disable semantics, still executed entirely by Pristine.
+- Immutable Prepared composition (`keys/1`, `put/3`, `delete/2`, `take/2`,
+  `merge/2`) with validation on every rebuild and deterministic execution order.
+- Versioned `typesafe-prepared-v1:<sha256>` semantic-contract fingerprints and
+  response/error fingerprint propagation.
+- Opt-in strict response contracts for unknown answer keys and exact allowed-model
+  membership, preserving 0.2 behavior by default.
+- Optional serialized request-byte budgets enforced before Pristine transport
+  egress, with safe actual/limit metadata and per-call override support.
+- Pure exact model lookup and objective `release_date` latest-selection helpers,
+  including explicit ambiguity/unordered-catalog errors instead of fuzzy guesses.
+- Stable privacy-safe `TypeSafeSDK.Response.metadata/1` and
+  `TypeSafeSDK.Error.metadata/1` accessors.
+
+### Changed
+
+- Require Pristine `~> 0.4.0`; TypeSafe delegates runtime cancellation capability
+  discovery to `Pristine.RuntimeCapabilities.transport/1` and does not infer
+  support from adapter names or optional callback presence.
+- Bumped package, runtime/header, docs source-ref and committed schema release
+  metadata to 0.3.0.
+- Preserved the 0.2 semantic constructors, enriched answers, raw/wire escape
+  hatches, bounded batching, test seam, telemetry, schema tooling and evaluation
+  workflow without adding an HTTP client, retry engine, circuit breaker, queue,
+  or transport cancellation implementation to TypeSafe.
+
+### Verification status
+
+- Source/static inspection and overlay-diff checks for this implementation were
+  run in the delivery environment. That environment does not provide Elixir,
+  Erlang or Mix, so compilation, ExUnit, formatter, Credo, Dialyzer, ExDoc,
+  generated-artifact verification, live fixtures and Hex build remain explicit
+  target-environment gates. See `HANDOFF.md` and `VERIFICATION.md`.
+
 ## 0.2.0 - 2026-09-17
 
 ### Added

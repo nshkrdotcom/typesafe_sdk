@@ -62,3 +62,18 @@ case-insensitive names, control characters and non-stringifiable values produce
 path-aware `:invalid_request` errors. Existing protected headers remain owned by
 the client. Duplicate nested retry options are also rejected by the semantic API.
 The legacy parity interface keeps its existing header normalization behavior.
+
+## 0.3 runtime controls
+
+Client defaults also accept:
+
+- `:response_contract` - semantic response policy; defaults to preserving 0.2 behavior
+- `:max_request_bytes` - positive serialized request-byte limit or `nil`
+
+Unary calls may pass `cancellation: Pristine.Cancellation.new()`. The exact token
+is forwarded to Pristine; TypeSafe does not wrap it. Per-call retry keyword/map
+values inherit omitted fields from the client retry policy. Per-call
+`max_request_bytes` wins over the client setting; explicit `nil` disables the
+client byte budget for that call.
+
+See [runtime controls](runtime-controls.md) and [the 0.3 migration](migration-0.3.md).

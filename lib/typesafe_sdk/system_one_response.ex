@@ -21,6 +21,7 @@ defmodule TypeSafeSDK.SystemOneResponse do
     :raw,
     :batch_index,
     :runtime_elapsed_ms,
+    :prepared_fingerprint,
     unknown_answers: %{},
     retries: 0,
     elapsed_ms: 0
@@ -38,7 +39,8 @@ defmodule TypeSafeSDK.SystemOneResponse do
           runtime_elapsed_ms: number() | nil,
           batch_index: non_neg_integer() | nil,
           request_id: String.t() | nil,
-          raw_http_response: Pristine.Response.t() | nil
+          raw_http_response: Pristine.Response.t() | nil,
+          prepared_fingerprint: String.t() | nil
         }
 
   @spec decode(term()) :: {:ok, t()} | {:error, Error.t()}

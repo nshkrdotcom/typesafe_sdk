@@ -1,49 +1,44 @@
 # Runtime Bounds and Capability Audit
 
-The SDK intentionally does not add a second pool, mailbox queue, HTTP engine or
-retry engine. Hfiguera's useful overload/body-size/cancellation concerns become
-explicit requirements at the Pristine transport boundary.
+TypeSafe SDK does not add a second pool, mailbox queue, HTTP engine, retry engine
+or transport cancellation implementation. Runtime capability discovery delegates
+to `Pristine.RuntimeCapabilities.transport/1` and fails closed.
 
 ```elixir
 report = TypeSafeSDK.RuntimeCapabilities.report(client)
-TypeSafeSDK.RuntimeCapabilities.check(client, [:bounded_queue, :max_response_bytes])
+report.runtime.unary_cancellation
+# => %{status: :supported} | %{status: :unsupported} | %{status: :unverified}
+
+TypeSafeSDK.RuntimeCapabilities.check(client, [
+  :unary_cancellation,
+  :cancellation_cleanup
+])
 ```
 
 ```bash
 mix typesafe.capabilities
-mix typesafe.capabilities --require bounded_queue,max_response_bytes,cancellation_cleanup
+mix typesafe.capabilities --require unary_cancellation,cancellation_cleanup
 ```
 
-The supplied source does not establish these capabilities for the default
-Pristine Finch adapter. They report **unverified** and required guarantees fail
-closed. This is not a statement that Pristine lacks every capability; it is a
-statement that this SDK has no supported evidence to promise them.
+Pristine 0.4.0's built-in Finch-named unary adapter advertises verified
+`:unary_cancellation` and `:cancellation_cleanup`; its cancellation path is
+Execution Plane-backed and terminates the local unary operation before cleanup
+returns. Third-party transports are normalized by Pristine and missing,
+malformed or failing advertisements remain `:unverified`.
 
-A Pristine adapter can expose `typesafe_capabilities(transport_opts)` (preferred,
-so its actual settings are inspected) or `typesafe_capabilities/0`:
+TypeSafe never infers support from an adapter module name, `function_exported?/3`
+or transport options. The TypeSafe-facing report contains only the adapter name,
+normalized capability statuses/values, and SDK batch-bound descriptions; it does
+not expose credentials, headers or transport context options. Existing 0.2 bound
+audit names remain present and report `%{status: :unverified}` when Pristine has
+no verified/advertised value for them.
 
-```elixir
-%{
-  bounded_outstanding_requests: 16,
-  bounded_queue: 32,
-  max_response_bytes: 8_388_608,
-  deterministic_overload: true,
-  cancellation_cleanup: true
-}
-```
+Custom Pristine capabilities such as `bounded_queue` or `max_response_bytes` may
+also appear when an owning adapter advertises them through Pristine. Required
+capabilities must have normalized status `:supported`. `runtime_requirements:` on
+`new_client/1` enforces the same check.
 
-Positive numeric bounds are required; queue zero is valid. Boolean capabilities
-must be exactly true. Missing/malformed/broken advertisements remain unverified.
-`runtime_requirements: [...]` on `new_client` enforces the same check. The report
-labels accepted values **advertised**, not verified: transport contract tests
-must exercise saturation, bounded buffering during transfer, overload outcomes,
-caller death and resource release. Do not add an adapter advertisement without
-implementing and testing its guarantees in the owning runtime repository.
-
-The SDK does implement per-enumeration batch task bounds and task cleanup.
-A post-download byte-length check would not prevent an unbounded transfer, so
-0.2.0 does not pretend such a check is a streaming response cap. Unresolved
-runtime guarantees remain explicit release/deployment review items in HANDOFF.
-
-Run `mix run examples/live_observability.exs` for a complete live walkthrough.
-See [the live example catalog](../examples/README.md) for setup and API-call costs.
+The SDK itself implements per-enumeration batch task bounds and lifecycle cleanup.
+A serialized **request** byte budget in 0.3 is a local pre-egress semantic control;
+it is not a streaming response-body cap or a global transport queue guarantee.
+See [runtime controls](runtime-controls.md) and [batching](batching.md).

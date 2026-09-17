@@ -31,7 +31,8 @@ defmodule TypeSafeSDK.Batch do
         supervisor = Lifecycle.supervisor(lifecycle)
         indexed = Stream.with_index(states)
         worker = fn input -> evaluate_input(client, input, prepared, request_opts) end
-        stream = task_stream(supervisor, indexed, worker, task_opts, max_pending)
+        cancellation = Keyword.get(request_opts, :cancellation)
+        stream = task_stream(supervisor, indexed, worker, task_opts, max_pending, cancellation)
         {lifecycle, {:new, stream}}
       end,
       &next/1,
@@ -94,19 +95,28 @@ defmodule TypeSafeSDK.Batch do
      ], on_error, max_pending}
   end
 
-  defp task_stream(supervisor, indexed, worker, task_opts, max_pending) do
+  defp task_stream(supervisor, indexed, worker, task_opts, max_pending, cancellation) do
     if task_opts[:ordered] do
       # async_stream's active-task bound alone does not bound its ordered
       # completion buffer. Finite windows provide that bound without replacing
-      # OTP's task timeout, monitor or cancellation machinery.
+      # OTP's task timeout or monitor machinery. The inner source checks the
+      # shared Pristine token every time async_stream asks for another task.
       indexed
       |> Stream.chunk_every(max_pending)
       |> Stream.flat_map(fn window ->
-        Task.Supervisor.async_stream_nolink(supervisor, window, worker, task_opts)
+        source = cancellation_aware(window, cancellation)
+        Task.Supervisor.async_stream_nolink(supervisor, source, worker, task_opts)
       end)
     else
-      Task.Supervisor.async_stream_nolink(supervisor, indexed, worker, task_opts)
+      source = cancellation_aware(indexed, cancellation)
+      Task.Supervisor.async_stream_nolink(supervisor, source, worker, task_opts)
     end
+  end
+
+  defp cancellation_aware(stream, nil), do: stream
+
+  defp cancellation_aware(stream, %Pristine.Cancellation{} = cancellation) do
+    Stream.take_while(stream, fn _item -> not Pristine.Cancellation.cancelled?(cancellation) end)
   end
 
   defp evaluate_input(client, {state, index}, prepared, request_opts) do

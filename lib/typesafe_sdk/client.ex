@@ -10,7 +10,7 @@ defmodule TypeSafeSDK.Client do
   alias Pristine.Adapters.Auth.Bearer
   alias Pristine.Client, as: RuntimeClient
   alias Pristine.SDK.OpenAPI.Client, as: OpenAPIClient
-  alias TypeSafeSDK.{Constants, Error, ProviderProfile, RetryPolicy}
+  alias TypeSafeSDK.{Constants, Error, ProviderProfile, RequestBudget, ResponseContract, RetryPolicy}
 
   @protected_headers MapSet.new([
                        "authorization",
@@ -28,6 +28,8 @@ defmodule TypeSafeSDK.Client do
           default_model: String.t(),
           timeout_ms: pos_integer(),
           retry: RetryPolicy.t() | false,
+          response_contract: ResponseContract.t(),
+          max_request_bytes: pos_integer() | nil,
           headers: map(),
           transport: module(),
           transport_opts: keyword(),
@@ -41,6 +43,8 @@ defmodule TypeSafeSDK.Client do
     :default_model,
     :timeout_ms,
     :retry,
+    :response_contract,
+    :max_request_bytes,
     :headers,
     :transport,
     :transport_opts,
@@ -58,6 +62,8 @@ defmodule TypeSafeSDK.Client do
     default_model = resolve_string(opts, :model, config(:default_model, Constants.default_model()))
     timeout_ms = resolve_timeout_ms(opts)
     retry = resolve_retry(option_or_config(opts, :retry, %RetryPolicy{}))
+    response_contract = resolve_response_contract(option_or_config(opts, :response_contract, nil))
+    max_request_bytes = resolve_max_request_bytes(option_or_config(opts, :max_request_bytes, nil))
     headers = opts |> Keyword.get(:headers, %{}) |> normalize_headers() |> sanitize_extra_headers()
     transport = Keyword.get(opts, :transport, config(:transport, Pristine.Adapters.Transport.Finch))
     transport_opts = Keyword.get(opts, :transport_opts, config(:transport_opts, []))
@@ -68,18 +74,22 @@ defmodule TypeSafeSDK.Client do
       default_model: default_model,
       timeout_ms: timeout_ms,
       retry: retry,
+      response_contract: response_contract,
+      max_request_bytes: max_request_bytes,
       headers: headers,
       transport: transport,
       transport_opts: transport_opts
     }
 
+    context = build_context(client)
+    client = %{client | context: context, pristine_client: RuntimeClient.from_context(context)}
+
     TypeSafeSDK.RuntimeCapabilities.require!(
-      %{transport: transport, transport_opts: transport_opts},
+      client,
       Keyword.get(opts, :runtime_requirements, [])
     )
 
-    context = build_context(client)
-    %{client | context: context, pristine_client: RuntimeClient.from_context(context)}
+    client
   end
 
   @spec pristine_client(t()) :: RuntimeClient.t()
@@ -108,12 +118,17 @@ defmodule TypeSafeSDK.Client do
     execute_opts =
       []
       |> maybe_put(:timeout, timeout_override_ms(call_opts))
+      |> maybe_put(:cancellation, Keyword.get(call_opts, :cancellation))
       |> Keyword.put(:retry_opts, RetryPolicy.to_pristine_opts(retry_policy))
       |> Keyword.put(:typesafe_retry_policy, retry_policy)
       |> Keyword.put(:response, :wrapped)
 
     context = %{client.context | provider_profile: ProviderProfile.profile(retry_policy)}
-    Pristine.execute_request(request_spec, context, execute_opts)
+
+    case Pristine.execute_request(request_spec, context, execute_opts) do
+      {:error, %Pristine.Error{type: :cancelled} = cause} -> {:error, Error.cancelled(cause)}
+      result -> result
+    end
   end
 
   @spec extra_headers(term()) :: map()
@@ -248,23 +263,22 @@ defmodule TypeSafeSDK.Client do
 
   defp retry_override_policy(opts, default) do
     case Keyword.fetch(opts, :retry) do
-      :error ->
-        default
+      :error -> default
+      {:ok, override} -> RetryPolicy.merge!(default, override)
+    end
+  end
 
-      {:ok, nil} ->
-        default
+  defp resolve_response_contract(value) do
+    case ResponseContract.normalize(value) do
+      {:ok, contract} -> contract
+      {:error, error} -> raise error
+    end
+  end
 
-      {:ok, false} ->
-        false
-
-      {:ok, %RetryPolicy{} = policy} ->
-        policy
-
-      {:ok, policy_opts} when is_list(policy_opts) or is_map(policy_opts) ->
-        RetryPolicy.new!(policy_opts)
-
-      {:ok, other} ->
-        raise Error.configuration("invalid retry override: #{inspect(other)}")
+  defp resolve_max_request_bytes(value) do
+    case RequestBudget.validate(value, ["max_request_bytes"]) do
+      :ok -> value
+      {:error, error} -> raise error
     end
   end
 

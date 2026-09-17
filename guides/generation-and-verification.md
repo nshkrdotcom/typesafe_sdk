@@ -1,7 +1,8 @@
 # Generation And Verification
 
-The SDK requires `pristine ~> 0.3.0` and uses its `status_retry_ranges` provider
-contract. The prerequisite command checks that capability before generation.
+The SDK requires `pristine ~> 0.4.0`. The prerequisite command checks the retained
+provider status-range contract plus Pristine 0.4 cancellation/capability behavior
+before generation; TypeSafe does not implement transport cancellation itself.
 
 Generation is a source-checkout maintenance task. Pristine Codegen and Provider
 Testkit are checkout-only dependencies selected through the workspace bootstrap;

@@ -584,14 +584,14 @@ Descriptions and instructions can also contain JSON-compatible objects or arrays
 
 # Installation
 
-Requires Elixir `~> 1.18`. The repository and CI pin Erlang/OTP 28.3.1 and Elixir 1.19.5-otp-28 in `.tool-versions`; no broader OTP test matrix is declared. This 0.1.x SDK exposes two operations and no streaming API.
+Requires Elixir `~> 1.18`. The repository and CI pin Erlang/OTP 28.3.1 and Elixir 1.19.5-otp-28 in `.tool-versions`; no broader OTP test matrix is declared. The 0.3.0 release preserves the two generated API operations and layers semantic evaluation/batching on top; it does not add a provider streaming API.
 
 Add the dependency to your application's `mix.exs`:
 
 ```elixir
 def deps do
   [
-    {:typesafe_sdk, "~> 0.2.0"}
+    {:typesafe_sdk, "~> 0.3.0"}
   ]
 end
 ```
@@ -602,7 +602,7 @@ Then:
 mix deps.get
 ```
 
-This source tree targets TypeSafeSDK 0.2.0. The Hex dependency above selects this release. Pristine `~> 0.3.1` is required; do not downgrade it to 0.2.x. Source-checkout maintenance tools need the contributor setup below. See `HANDOFF.md` for the verification and release status of this change set.
+This source tree targets TypeSafeSDK 0.3.0. The Hex dependency above selects this release. Pristine `~> 0.4.0` is required; do not downgrade it to the 0.3 runtime line. Source-checkout maintenance tools need the contributor setup below. See `HANDOFF.md` for the verification and release status of this change set.
 
 Get an API key from the [TypeSafe dashboard](https://console.typesafe.ai), following the [official quick start](https://docs.typesafe.ai/introduction/quickstart). Set `TYPESAFE_API_KEY` in your environment, then configure it in your host application's `config/runtime.exs`:
 
@@ -615,7 +615,63 @@ config :typesafe_sdk,
 
 Runtime library modules do not read operating-system environment variables themselves. Configuration enters through application config or explicit client options.
 
-The default transport is `Pristine.Adapters.Transport.Finch`, with `transport_opts: []`. With Pristine 0.3.1, normal application startup is sufficient: a host does not need its own Finch pool or custom transport options. This was verified with a local HTTP request using the default transport.
+The default transport is `Pristine.Adapters.Transport.Finch`, with `transport_opts: []`. With Pristine 0.4.0, normal application startup is sufficient: a host does not need its own Finch pool or custom transport options. TypeSafe relies on the Pristine 0.4 transport contract for this behavior; run the real-environment gates in `HANDOFF.md` before release.
+
+---
+
+# 0.3.0 runtime controls and semantic contracts
+
+0.3.0 keeps the 0.2 semantic defaults and adds production controls without
+turning TypeSafe into an HTTP runtime. Pristine `~> 0.4.0` remains responsible
+for transport execution, retries, rate limiting, circuit breaking and verified
+physical unary cancellation.
+
+```elixir
+cancel = Pristine.Cancellation.new()
+
+{:ok, response} =
+  TypeSafeSDK.evaluate(client, state, prepared,
+    cancellation: cancel,
+    max_request_bytes: 262_144,
+    response_contract: [
+      on_unknown_answer: :error,
+      allowed_models: ["jev-2026-09"]
+    ]
+  )
+
+TypeSafeSDK.Response.metadata(response)
+TypeSafeSDK.Prepared.fingerprint(prepared)
+```
+
+Inspect cancellation support without a request:
+
+```elixir
+TypeSafeSDK.RuntimeCapabilities.report(client).runtime
+# unary_cancellation: %{status: :supported | :unsupported | :unverified}
+# cancellation_cleanup: %{status: :supported | :unsupported | :unverified}
+```
+
+Cancellation uses the exact `Pristine.Cancellation` token. When the configured
+Pristine transport advertises verified cancellation, the local unary HTTP
+operation is physically terminated and cleaned up. This cannot prove that the
+remote service never received or began processing the request and cannot undo
+remote side effects.
+
+Prepared values now support `keys/1`, `put/3`, `delete/2`, `take/2` and
+`merge/2`. Every composition rebuilds through semantic validation and recomputes
+a versioned `typesafe-prepared-v1:<sha256>` fingerprint. Fingerprints cover the
+ordered semantic/wire question contract and deliberately exclude credentials,
+retry/cancellation state, concurrency and telemetry.
+
+Retry maps supplied per call inherit omitted fields from the client policy;
+`retry: false` still disables retries explicitly. TypeSafe performs only this
+configuration merge—Pristine executes and classifies retries, including
+cancellation during retry waits.
+
+See [the 0.3 migration guide](guides/migration-0.3.md) and
+[runtime controls](guides/runtime-controls.md) for request-byte budgets, strict
+response contracts, batch cancellation, exact model helpers, safe metadata and
+the cancellation/replay ambiguity boundary.
 
 ---
 
@@ -938,19 +994,21 @@ A dependency's `config/runtime.exs` does not run in its host application. This r
 | `:timeout` | None | Positive seconds; default request timeout is 10 seconds |
 | `:timeout_ms` | `:timeout_ms` | `10_000` milliseconds; wins over `:timeout` |
 | `:retry` | `:retry` | Default `TypeSafeSDK.RetryPolicy`; `false` disables retries |
+| `:response_contract` | `:response_contract` | Compatibility-preserving contract defaults; semantic calls may override |
+| `:max_request_bytes` | `:max_request_bytes` | `nil`; optional positive serialized request-byte limit |
 | `:headers` | None | `%{}`; map or list of header pairs |
 | `:transport` | `:transport` | `Pristine.Adapters.Transport.Finch` |
 | `:transport_opts` | `:transport_opts` | `[]` |
-| `:runtime_requirements` | None | `[]`; fail closed when required transport capabilities are unadvertised |
+| `:runtime_requirements` | None | `[]`; fail closed unless required Pristine transport capabilities are `:supported` |
 | None | `:log_level` | `:warn` |
 
 Use `:model` in client options and `:default_model` in application config. Explicit non-nil client values take precedence over config for key, URL, model, and retry. Transport options use an explicit value whenever present, including `nil`; omit them to use defaults.
 
 ### Per-call precedence
 
-`TypeSafeSDK.system_one/4` accepts `:model`, `:timeout`, `:timeout_ms`, `:retry`, `:extra_headers`, and `:extra_body`. `TypeSafeSDK.list_models/2` accepts the timeout, retry, and extra-header options. Per-call non-nil timeout/retry values override the client; `:timeout_ms` wins over `:timeout`. A truthy per-call `:model` replaces the client default. A retry map or keyword list creates a fresh policy using defaults for unspecified fields, not a merge with the client's policy.
+`TypeSafeSDK.system_one/4` accepts `:model`, `:timeout`, `:timeout_ms`, `:retry`, `:extra_headers`, and `:extra_body`. `TypeSafeSDK.list_models/2` accepts the timeout, retry, and extra-header options. Per-call non-nil timeout/retry values override the client; `:timeout_ms` wins over `:timeout`. A truthy per-call `:model` replaces the client default. A retry map or keyword list merges into the client policy: omitted fields inherit, explicit fields win, and `false` disables retries for that call.
 
-`evaluate` / `evaluate!` accept those System One options plus `:probability_tolerance` (default 0.02, range 0..0.1) and nested `:telemetry_metadata`. Their `extra_body` cannot replace `state`, `questions`, or `model`; question extras cannot replace `type`, `instructions`, or `criteria`. Strict header validation rejects malformed names/values and case-insensitive duplicates. Batch calls additionally accept `:max_concurrency`, `:max_pending`, `:ordered`, `:on_error`, `:task_timeout_ms`, and `:attempt_timeout_ms`; see [batching](guides/batching.md) for defaults, units and lifecycle contracts.
+`evaluate` / `evaluate!` accept those System One options plus `:probability_tolerance` (default 0.02, range 0..0.1), nested `:telemetry_metadata`, `:cancellation`, `:response_contract`, and `:max_request_bytes`. Their `extra_body` cannot replace `state`, `questions`, or `model`; question extras cannot replace `type`, `instructions`, or `criteria`. Strict header validation rejects malformed names/values and case-insensitive duplicates. Batch calls additionally accept `:max_concurrency`, `:max_pending`, `:ordered`, `:on_error`, `:task_timeout_ms`, and `:attempt_timeout_ms`; see [batching](guides/batching.md) for defaults, units and lifecycle contracts.
 
 See [client configuration](guides/client-configuration.md) for more examples.
 
@@ -988,11 +1046,11 @@ total retry budget 30 seconds
 
 `TypeSafeSDK.RetryPolicy` fields are `max_retries`, `backoff_initial`, `backoff_max`, `backoff_jitter`, `http_statuses`, `respect_retry_after`, `api_connection_error`, `api_timeout_error`, and `timeout`. The three boolean flags default to `true`. The budget field `timeout` defaults to `30.0` seconds; `nil` disables that budget. The budget stops another retry when its delay would reach the budget, rather than interrupting an in-flight request.
 
-`TypeSafeSDK.RetryPolicy.to_pristine_opts/1` maps `max_retries` to Pristine's `max_attempts`. Pristine 0.3.1 passes that value to its handler as a retry count, so the default is two retries after the initial request, without an off-by-one adjustment.
+`TypeSafeSDK.RetryPolicy.to_pristine_opts/1` maps `max_retries` to Pristine's `max_attempts`. Pristine 0.4.0 passes that value to its handler as a retry count, so the default is two retries after the initial request, without an off-by-one adjustment.
 
-Client-level and per-call policies may replace the retry-status set or disable retries entirely.
+Per-call retry keyword/map values inherit omitted fields from the client policy; explicit fields win. An explicit `http_statuses` value replaces that field, and `retry: false` disables retries for the call.
 
-HTTP execution, retry classification, transport, and provider mechanics are supplied by **Pristine 0.3.1** rather than duplicated inside this SDK.
+HTTP execution, retry classification, transport, and provider mechanics are supplied by **Pristine 0.4.0** rather than duplicated inside this SDK.
 
 ---
 
@@ -1224,7 +1282,7 @@ The bootstrap delegates eligible dependency source selection to the workspace wi
 
 For a full generator/runtime handoff, follow [AGENTS.md](https://github.com/nshkrdotcom/typesafe_sdk/blob/main/AGENTS.md) in this order:
 
-1. Complete and QC [the Pristine prerequisite](https://github.com/nshkrdotcom/typesafe_sdk/blob/main/PREREQUISITE_PRISTINE_0.3.0.md) in Pristine.
+1. Resolve the required Pristine `~> 0.4.0` runtime and review its cancellation/capability contract.
 2. `mix deps.get`
 3. <code>mix typesafe.prereq</code>
 4. `mix typesafe.refresh --project-root .` when validating live upstream parity.
@@ -1373,7 +1431,7 @@ System One allows applications to express these questions as typed function call
 
 # Documentation
 
-The [0.2.0 cheatsheet](cheatsheets/typesafe_sdk.cheatmd) covers strict constructors,
+The [0.3.0 cheatsheet](cheatsheets/typesafe_sdk.cheatmd) covers strict constructors,
 prepared evaluation, uncertainty helpers, batches, tests and contract tools. The
 [labeled evaluation workflow](examples/evaluation/README.md) includes development
 and held-out datasets, policy freezing, coverage/error metrics and latency/token reporting.

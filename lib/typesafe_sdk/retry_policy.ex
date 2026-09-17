@@ -58,6 +58,39 @@ defmodule TypeSafeSDK.RetryPolicy do
     end
   end
 
+  @doc """
+  Merge a per-call retry override into a client policy.
+
+  Omitted keys inherit from the client policy. `false` explicitly disables
+  retries. A complete `%RetryPolicy{}` is already fully resolved and replaces
+  the inherited policy. When a disabled client is explicitly re-enabled with a
+  keyword/map override, omitted fields inherit the SDK policy defaults.
+  """
+  @spec merge(t() | false | nil, t() | keyword() | map() | false | nil) ::
+          {:ok, t() | false} | {:error, TypeSafeSDK.Error.t()}
+  def merge(base, override)
+  def merge(base, nil), do: {:ok, normalize_base(base)}
+  def merge(_base, false), do: {:ok, false}
+  def merge(_base, %__MODULE__{} = override), do: {:ok, override}
+
+  def merge(base, override) when is_list(override) or is_map(override) do
+    with {:ok, attrs} <- override_attrs(override) do
+      inherited = base |> normalize_base() |> enabled_base() |> Map.from_struct()
+      new(Map.merge(inherited, attrs))
+    end
+  end
+
+  def merge(_base, _override),
+    do: {:error, TypeSafeSDK.Error.configuration("invalid retry override")}
+
+  @spec merge!(t() | false | nil, t() | keyword() | map() | false | nil) :: t() | false
+  def merge!(base, override) do
+    case merge(base, override) do
+      {:ok, policy} -> policy
+      {:error, error} -> raise error
+    end
+  end
+
   @spec to_pristine_opts(t() | false | nil) :: keyword()
   def to_pristine_opts(false), do: [max_attempts: 0]
   def to_pristine_opts(nil), do: to_pristine_opts(%__MODULE__{})
@@ -73,6 +106,28 @@ defmodule TypeSafeSDK.RetryPolicy do
     ]
     |> maybe_put_retry_budget(policy.timeout)
   end
+
+  defp normalize_base(nil), do: %__MODULE__{}
+  defp normalize_base(false), do: false
+  defp normalize_base(%__MODULE__{} = policy), do: policy
+
+  defp enabled_base(false), do: %__MODULE__{}
+  defp enabled_base(%__MODULE__{} = policy), do: policy
+
+  defp override_attrs(attrs) when is_list(attrs) do
+    cond do
+      not Keyword.keyword?(attrs) ->
+        {:error, TypeSafeSDK.Error.configuration("retry override must be a keyword list")}
+
+      length(Keyword.keys(attrs)) != length(Enum.uniq(Keyword.keys(attrs))) ->
+        {:error, TypeSafeSDK.Error.configuration("duplicate retry override options are not allowed")}
+
+      true ->
+        {:ok, Map.new(attrs)}
+    end
+  end
+
+  defp override_attrs(attrs) when is_map(attrs) and not is_struct(attrs), do: {:ok, attrs}
 
   defp normalize_http_statuses_attr(attrs) do
     case Map.fetch(attrs, :http_statuses) do

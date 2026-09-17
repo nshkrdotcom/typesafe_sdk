@@ -24,6 +24,12 @@ defmodule TypeSafeSDK.Error do
           | :api_error
           | :connection
           | :timeout
+          | :cancelled
+          | :response_contract
+          | :request_too_large
+          | :model_not_found
+          | :ambiguous_model
+          | :unordered_model_catalog
           | :response_validation
 
   @type t :: %__MODULE__{
@@ -38,6 +44,8 @@ defmodule TypeSafeSDK.Error do
           path: [String.t()] | nil,
           endpoint: String.t() | nil,
           raw_http_response: Pristine.Response.t() | nil,
+          cause: term(),
+          prepared_fingerprint: String.t() | nil,
           details: map()
         }
 
@@ -52,6 +60,8 @@ defmodule TypeSafeSDK.Error do
                path: nil,
                endpoint: nil,
                raw_http_response: nil,
+               cause: nil,
+               prepared_fingerprint: nil,
                details: %{}
 
   @doc "A local request validation failure, with unambiguous path components."
@@ -75,6 +85,81 @@ defmodule TypeSafeSDK.Error do
       message: "Invalid response at #{inspect(path)}: #{reason}",
       body: body,
       details: %{reason: reason}
+    }
+  end
+
+  @doc "Stable, bounded structural metadata safe for telemetry and diagnostics."
+  @spec metadata(t()) :: map()
+  def metadata(%__MODULE__{} = error) do
+    %{
+      type: error.type,
+      code: error.type,
+      status: error.status,
+      request_id: bounded_identifier(error.request_id),
+      retry_after_ms: error.retry_after_ms,
+      retriable: retryable?(error),
+      cancelled: error.type == :cancelled,
+      field_path: bounded_identifier(error.field_path),
+      response_contract: response_contract_metadata(error),
+      request_budget: request_budget_metadata(error),
+      prepared_fingerprint: error.prepared_fingerprint
+    }
+  end
+
+  @doc false
+  @spec with_prepared_fingerprint(t(), String.t()) :: t()
+  def with_prepared_fingerprint(%__MODULE__{} = error, fingerprint) when is_binary(fingerprint),
+    do: %{error | prepared_fingerprint: fingerprint}
+
+  @doc false
+  @spec cancelled(Pristine.Error.t()) :: t()
+  def cancelled(%Pristine.Error{type: :cancelled} = cause) do
+    %__MODULE__{
+      type: :cancelled,
+      message: "Request was cancelled",
+      request_id: cause.request_id,
+      retry_after_ms: nil,
+      cause: cause,
+      details: %{cancelled: true}
+    }
+  end
+
+  @doc false
+  @spec request_too_large(non_neg_integer(), pos_integer()) :: t()
+  def request_too_large(actual_bytes, max_bytes) do
+    %__MODULE__{
+      type: :request_too_large,
+      message: "Serialized request exceeds max_request_bytes",
+      details: %{actual_bytes: actual_bytes, max_bytes: max_bytes}
+    }
+  end
+
+  @doc false
+  @spec response_contract(atom(), map()) :: t()
+  def response_contract(violation, details \\ %{}) do
+    %__MODULE__{
+      type: :response_contract,
+      message: "Response contract violation: #{violation}",
+      details: Map.put(details, :violation, violation)
+    }
+  end
+
+  @doc false
+  def model_lookup(type, identifier, details \\ %{})
+      when type in [:model_not_found, :ambiguous_model] do
+    %__MODULE__{
+      type: type,
+      message: "Model lookup failed: #{type}",
+      details: Map.merge(%{identifier: bounded_identifier(identifier)}, details)
+    }
+  end
+
+  @doc false
+  def unordered_model_catalog(details \\ %{}) do
+    %__MODULE__{
+      type: :unordered_model_catalog,
+      message: "Model catalog has no unambiguous objective latest ordering",
+      details: details
     }
   end
 
@@ -305,6 +390,31 @@ defmodule TypeSafeSDK.Error do
     uri = URI.parse(url)
     URI.to_string(%{uri | query: nil, fragment: nil})
   end
+
+  defp response_contract_metadata(%__MODULE__{type: :response_contract, details: details}) do
+    details
+    |> Map.take([:violation, :answer_key, :model, :allowed_model_count])
+  end
+
+  defp response_contract_metadata(_error), do: nil
+
+  defp request_budget_metadata(%__MODULE__{type: :request_too_large, details: details}) do
+    case {Map.get(details, :actual_bytes), Map.get(details, :max_bytes)} do
+      {actual, maximum} when is_integer(actual) and is_integer(maximum) ->
+        %{actual_bytes: actual, max_bytes: maximum}
+
+      _ ->
+        nil
+    end
+  end
+
+  defp request_budget_metadata(_error), do: nil
+
+  defp bounded_identifier(nil), do: nil
+  defp bounded_identifier(value) when is_binary(value) and byte_size(value) <= 128, do: value
+  defp bounded_identifier(value) when is_binary(value), do: String.slice(value, 0, 128)
+  defp bounded_identifier(value) when is_atom(value) or is_integer(value), do: to_string(value)
+  defp bounded_identifier(_value), do: "<invalid>"
 
   defp parse_retry_after_seconds(nil), do: nil
 

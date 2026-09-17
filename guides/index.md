@@ -3,6 +3,8 @@
 ## Start and migrate
 
 - [Getting started](getting-started.md)
+- [Migrating to 0.3.0](migration-0.3.md)
+- [Runtime controls and semantic contracts](runtime-controls.md)
 - [Migrating to 0.2.0](migration-0.2.md)
 - [Cheatsheet](../cheatsheets/typesafe_sdk.cheatmd)
 

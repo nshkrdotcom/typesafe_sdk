@@ -2,15 +2,15 @@ defmodule TypeSafeSDK.ReleaseConsistencyTest do
   use ExUnit.Case, async: true
 
   test "SDK, Mix, source-ref, changelog and schema metadata share the release version" do
-    assert TypeSafeSDK.version() == "0.2.0"
-    assert Mix.Project.config()[:version] == "0.2.0"
-    assert Mix.Project.config()[:docs][:source_ref] == "v0.2.0"
+    assert TypeSafeSDK.version() == "0.3.0"
+    assert Mix.Project.config()[:version] == "0.3.0"
+    assert Mix.Project.config()[:docs][:source_ref] == "v0.3.0"
     changelog = File.read!("CHANGELOG.md")
-    assert changelog =~ "## 0.2.0 - 2026-09-17"
-    assert File.read!("README.md") =~ ~s({:typesafe_sdk, "~> 0.2.0"})
+    assert changelog =~ "## 0.3.0 - 2026-09-17"
+    assert File.read!("README.md") =~ ~s({:typesafe_sdk, "~> 0.3.0"})
 
     for path <- Path.wildcard("priv/json_schema/*.json") do
-      assert Jason.decode!(File.read!(path))["x-typesafe-sdk-version"] == "0.2.0"
+      assert Jason.decode!(File.read!(path))["x-typesafe-sdk-version"] == "0.3.0"
     end
   end
 
@@ -19,8 +19,8 @@ defmodule TypeSafeSDK.ReleaseConsistencyTest do
     assert {:ok, _} = TypeSafeSDK.evaluate(client, "synthetic", q: TypeSafeSDK.noul("Q?"))
     [request] = TypeSafeSDK.Test.requests(client)
     headers = Map.new(request.headers, fn {key, value} -> {String.downcase(key), value} end)
-    assert headers["user-agent"] == "typesafe-sdk/0.2.0"
-    assert headers["x-typesafe-sdk"] == "typesafe-sdk/0.2.0"
+    assert headers["user-agent"] == "typesafe-sdk/0.3.0"
+    assert headers["x-typesafe-sdk"] == "typesafe-sdk/0.3.0"
   end
 
   test "all registered documentation and package assets exist in the checkout" do
@@ -38,7 +38,7 @@ defmodule TypeSafeSDK.ReleaseConsistencyTest do
           "cheatsheets",
           "priv/json_schema",
           "examples/evaluation",
-          "docs/implementation/0.2.0"
+          "docs/implementation/0.3.0"
         ] do
       assert File.exists?(path), "missing package asset: #{path}"
     end

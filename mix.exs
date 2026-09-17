@@ -3,7 +3,7 @@ if bootstrap = System.get_env("MIX_WORKSPACE_OPS_BOOTSTRAP"), do: Code.require_f
 defmodule TypeSafeSDK.MixProject do
   use Mix.Project
 
-  @version "0.2.0"
+  @version "0.3.0"
   @source_url "https://github.com/nshkrdotcom/typesafe_sdk"
 
   def project do
@@ -34,7 +34,7 @@ defmodule TypeSafeSDK.MixProject do
 
   defp deps do
     [
-      workspace_dep({:pristine, "~> 0.3.1"}),
+      workspace_dep({:pristine, "~> 0.4.0"}),
       {:jason, "~> 1.4.5"},
       {:telemetry, "~> 1.3"},
       workspace_tooling_deps(),
@@ -106,7 +106,9 @@ defmodule TypeSafeSDK.MixProject do
         "guides/testing.md",
         "guides/telemetry.md",
         "guides/runtime-capabilities.md",
+        "guides/runtime-controls.md",
         "guides/json-schemas.md",
+        "guides/migration-0.3.md",
         "guides/migration-0.2.md",
         "guides/confidence-routing.md",
         "guides/composite-scoring.md",
@@ -131,11 +133,13 @@ defmodule TypeSafeSDK.MixProject do
           "guides/answers-and-confidence.md",
           "guides/batching.md",
           "guides/testing.md",
+          "guides/migration-0.3.md",
           "guides/migration-0.2.md"
         ],
         Operations: [
           "guides/telemetry.md",
           "guides/runtime-capabilities.md",
+          "guides/runtime-controls.md",
           "guides/json-schemas.md"
         ],
         Patterns: [

@@ -767,5 +767,5 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "ModelMetadataList",
   "x-source": "priv/upstream/openapi.json",
-  "x-typesafe-sdk-version": "0.2.0"
+  "x-typesafe-sdk-version": "0.3.0"
 }

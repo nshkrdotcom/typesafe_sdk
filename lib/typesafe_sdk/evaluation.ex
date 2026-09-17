@@ -7,6 +7,8 @@ defmodule TypeSafeSDK.Evaluation do
     Error,
     JSON,
     Prepared,
+    RequestBudget,
+    ResponseContract,
     RetryPolicy,
     SemanticResponse,
     SystemOneResponse,
@@ -23,9 +25,19 @@ defmodule TypeSafeSDK.Evaluation do
     :extra_body,
     :extra_headers,
     :probability_tolerance,
-    :telemetry_metadata
+    :telemetry_metadata,
+    :cancellation,
+    :response_contract,
+    :max_request_bytes
   ]
-  @semantic_options [:model, :extra_body, :probability_tolerance, :telemetry_metadata]
+  @semantic_options [
+    :model,
+    :extra_body,
+    :probability_tolerance,
+    :telemetry_metadata,
+    :response_contract,
+    :max_request_bytes
+  ]
 
   def run(%Client{} = client, state, questions, opts \\ []) do
     Telemetry.span(metadata(client, questions, opts), fn ->
@@ -33,19 +45,25 @@ defmodule TypeSafeSDK.Evaluation do
 
       result =
         with :ok <- validate_options(opts),
-             {:ok, prepared} <- Prepared.new(questions),
-             {:ok, state} <- JSON.normalize(state, ["state"]),
-             {:ok, extra} <- extra_body(Keyword.get(opts, :extra_body)),
-             {:ok, response} <- execute(client, state, prepared, extra, opts) do
-          SemanticResponse.enrich(
-            response,
-            prepared,
-            Keyword.get(opts, :probability_tolerance, 0.02)
-          )
+             {:ok, prepared} <- Prepared.new(questions) do
+          run_prepared(client, state, prepared, opts)
+          |> attach_prepared_fingerprint(prepared)
         end
 
       timed(result, started)
     end)
+  end
+
+  defp run_prepared(client, state, prepared, opts) do
+    with {:ok, state} <- JSON.normalize(state, ["state"]),
+         {:ok, extra} <- extra_body(Keyword.get(opts, :extra_body)),
+         {:ok, response} <- execute(client, state, prepared, extra, opts) do
+      SemanticResponse.enrich(
+        response,
+        prepared,
+        Keyword.get(opts, :probability_tolerance, 0.02)
+      )
+    end
   end
 
   defp timed({:ok, response}, started) do
@@ -69,6 +87,9 @@ defmodule TypeSafeSDK.Evaluation do
          :ok <- caller_metadata(Keyword.get(opts, :telemetry_metadata, %{})),
          :ok <- headers(Keyword.get(opts, :extra_headers)),
          :ok <- retry(Keyword.get(opts, :retry)),
+         :ok <- cancellation(Keyword.get(opts, :cancellation)),
+         :ok <- response_contract(Keyword.get(opts, :response_contract)),
+         :ok <- request_budget(Keyword.get(opts, :max_request_bytes)),
          {:ok, _} <- extra_body(Keyword.get(opts, :extra_body)) do
       :ok
     end
@@ -82,13 +103,29 @@ defmodule TypeSafeSDK.Evaluation do
         "model" => Keyword.get(opts, :model) || client.default_model
       })
 
-    case SystemOne.create(client, body, Keyword.drop(opts, @semantic_options)) do
-      {:ok, wire} -> SystemOneResponse.decode(wire)
-      {:error, error} -> {:error, error}
+    max_bytes = RequestBudget.effective(client.max_request_bytes, opts)
+
+    with :ok <- RequestBudget.check(body, max_bytes),
+         {:ok, wire} <- SystemOne.create(client, body, Keyword.drop(opts, @semantic_options)),
+         {:ok, response} <- SystemOneResponse.decode(wire),
+         {:ok, contract} <-
+           ResponseContract.merge(client.response_contract, Keyword.get(opts, :response_contract)),
+         :ok <- ResponseContract.validate(response, prepared, contract) do
+      {:ok, response}
     end
   rescue
     error in Error -> {:error, error}
   end
+
+  defp attach_prepared_fingerprint({:ok, %SystemOneResponse{} = response}, prepared) do
+    {:ok, %{response | prepared_fingerprint: Prepared.fingerprint(prepared)}}
+  end
+
+  defp attach_prepared_fingerprint({:error, %Error{} = error}, prepared) do
+    {:error, Error.with_prepared_fingerprint(error, Prepared.fingerprint(prepared))}
+  end
+
+  defp attach_prepared_fingerprint(other, _prepared), do: other
 
   defp extra_body(nil), do: {:ok, %{}}
 
@@ -157,6 +194,22 @@ defmodule TypeSafeSDK.Evaluation do
   end
 
   defp retry(_), do: invalid(["options", "retry"], "must be false or a retry policy")
+
+  defp cancellation(nil), do: :ok
+  defp cancellation(%Pristine.Cancellation{}), do: :ok
+
+  defp cancellation(_),
+    do: invalid(["options", "cancellation"], "must be a Pristine.Cancellation token")
+
+  defp response_contract(value) do
+    case ResponseContract.normalize(value) do
+      {:ok, _} -> :ok
+      {:error, %Error{} = error} -> {:error, error}
+    end
+  end
+
+  defp request_budget(value),
+    do: RequestBudget.validate(value, ["options", "max_request_bytes"])
 
   defp headers(nil), do: :ok
 

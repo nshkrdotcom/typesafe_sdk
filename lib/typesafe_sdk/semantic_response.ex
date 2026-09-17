@@ -13,7 +13,7 @@ defmodule TypeSafeSDK.SemanticResponse do
   end
 
   defp missing_answers(response, prepared) do
-    case Enum.find(Map.keys(Prepared.keys(prepared)), fn id ->
+    case Enum.find(Prepared.wire_keys(prepared), fn id ->
            not Map.has_key?(response.answers, id) and not Map.has_key?(response.unknown_answers, id)
          end) do
       nil -> :ok
@@ -26,7 +26,7 @@ defmodule TypeSafeSDK.SemanticResponse do
       with {:ok, definition} <- definition(prepared, id),
            :ok <- type_matches(answer, definition.type, id),
            {:ok, enriched} <- validate(answer, definition, ["answers", id], tolerance) do
-        key = Map.fetch!(Prepared.keys(prepared), id)
+        {:ok, key} = Prepared.caller_key(prepared, id)
         {:cont, {:ok, Map.put(acc, key, %{enriched | id: key})}}
       else
         error -> {:halt, error}

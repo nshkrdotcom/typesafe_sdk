@@ -17,7 +17,7 @@ defmodule TypeSafeSDK.SchemaTest do
 
     for {_, document} <- docs do
       refute Jason.encode!(document) =~ "#/components/schemas/"
-      assert document["x-typesafe-sdk-version"] == "0.2.0"
+      assert document["x-typesafe-sdk-version"] == "0.3.0"
 
       for reference <- references(document) do
         assert String.starts_with?(reference, "#/$defs/")

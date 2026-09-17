@@ -65,3 +65,27 @@ stopped processing it. See [runtime guarantees](runtime-capabilities.md) and
 
 Run `mix run examples/live_batching.exs` for a complete live walkthrough.
 See [the live example catalog](../examples/README.md) for setup and API-call costs.
+
+## Shared cancellation in 0.3
+
+Pass one `Pristine.Cancellation` token to the batch:
+
+```elixir
+cancel = Pristine.Cancellation.new()
+stream = TypeSafeSDK.evaluate_stream(client, states, prepared,
+  cancellation: cancel,
+  max_concurrency: 8)
+
+:ok = Pristine.Cancellation.cancel(cancel)
+```
+
+The same token is forwarded to every started unary request. Before scheduling
+another item, the batch source checks the token; once cancellation is observed,
+no new request work is started. Completed results keep the existing ordered or
+indexed result contract, while in-flight cancellations remain typed
+`:cancelled` errors. The owned lifecycle still shuts down tasks/monitors on halt
+or caller death.
+
+Physical local HTTP cancellation and cleanup are Pristine transport guarantees,
+not batch-worker guarantees. Remote processing may already have begun; cancelled
+operations are not automatically safe to replay.

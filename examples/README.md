@@ -1,4 +1,4 @@
-# Live examples for TypeSafeSDK 0.2.0
+# Live examples for TypeSafeSDK 0.3.0
 
 Every runnable example calls the real TypeSafe endpoint at
 `https://api.typesafe.ai`. There is no offline mode, fixture transport, synthetic
@@ -103,3 +103,6 @@ Reports from the all-examples runner go to `tmp/examples/`; captures go to
 `tmp/live/`. These directories are ignored. No example commits a baseline,
 publishes a package or claims that synthetic evaluation data proves production
 accuracy. All example sources and datasets are included in the Hex package.
+
+
+0.3.0 runtime-control examples are documented in `guides/runtime-controls.md`; live examples remain opt-in and may incur API charges.

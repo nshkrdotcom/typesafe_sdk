@@ -84,3 +84,21 @@ also cannot undo a remote operation. Never treat retryability as an exactly-once
 execution guarantee, and do not infer total billed tokens from the final
 successful response alone. Error bodies/details are available to the caller but
 must not be dumped into production telemetry without an explicit privacy review.
+
+
+## 0.3.0 retry inheritance and cancellation
+
+Client retry configuration is now inherited structurally by per-call keyword/map
+overrides: omitted keys keep the client value, explicit keys win, and `retry: false`
+disables retry for that call. TypeSafe resolves the policy only; Pristine 0.4 owns
+attempt execution, backoff, Retry-After handling, result classification and
+cancellation-aware retry waits.
+
+`cancellation: Pristine.Cancellation.new()` is forwarded unchanged to Pristine. A
+cancelled operation surfaces as `:cancelled`, is non-retryable, and remains distinct
+from timeout/connection/API errors. Cancellation terminates verified local unary HTTP
+work when the configured Pristine transport advertises support, but it is not a
+remote rollback or exactly-once guarantee.
+
+`TypeSafeSDK.Error.metadata/1` exposes bounded structural diagnostics without raw
+bodies, credentials or question/state text.

@@ -1,9 +1,11 @@
 defmodule TypeSafeSDK.SystemOne do
   alias TypeSafeSDK.Generated.SystemOne, as: GeneratedSystemOne
 
-  @moduledoc "System One API surface."
+  @moduledoc "System One parity/raw API surface."
 
-  alias TypeSafeSDK.{Client, Question, SystemOneResponse}
+  alias TypeSafeSDK.{Client, Question, RequestBudget, SystemOneResponse}
+
+  @local_options [:model, :extra_body, :max_request_bytes]
 
   @spec run(Client.t(), term(), map(), keyword()) :: {:ok, SystemOneResponse.t()} | {:error, term()}
   def run(%Client{} = client, state, questions, opts \\ [])
@@ -16,11 +18,16 @@ defmodule TypeSafeSDK.SystemOne do
       }
 
       body = Map.merge(body, normalize_extra_body(Keyword.get(opts, :extra_body, %{})))
-      call_opts = Keyword.drop(opts, [:model, :extra_body])
+      max_bytes = RequestBudget.effective(client.max_request_bytes, opts)
 
-      case GeneratedSystemOne.create(client, body, call_opts) do
-        {:ok, response_body} -> SystemOneResponse.decode(response_body)
-        {:error, error} -> {:error, error}
+      with :ok <- RequestBudget.validate(max_bytes, ["options", "max_request_bytes"]),
+           :ok <- RequestBudget.check(body, max_bytes) do
+        call_opts = Keyword.drop(opts, @local_options)
+
+        case GeneratedSystemOne.create(client, body, call_opts) do
+          {:ok, response_body} -> SystemOneResponse.decode(response_body)
+          {:error, error} -> {:error, error}
+        end
       end
     end
   end

@@ -2,7 +2,7 @@ defmodule Mix.Tasks.Typesafe.Capabilities do
   use Mix.Task
   @shortdoc "Reports advertised/unverified transport bounds; optionally enforces requirements"
   @moduledoc """
-  `mix typesafe.capabilities [--require bounded_queue,max_response_bytes]`
+  `mix typesafe.capabilities [--require unary_cancellation,cancellation_cleanup]`
 
   No HTTP request is made. Required capabilities must be explicitly advertised
   by the configured transport; this does not substitute for adapter contract tests.

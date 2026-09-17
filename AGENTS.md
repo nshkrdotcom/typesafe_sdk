@@ -11,11 +11,10 @@
 
 ## Pristine prerequisite
 
-- `pristine ~> 0.3.1` is a hard dependency.
-- `PREREQUISITE_PRISTINE_0.3.0.md` must be completed in the Pristine repo before
-  the final TypeSafe generator/runtime QC pass.
-- Do not replace `status_retry_ranges: [%{range: 500..599, ...}]` with 100 exact
-  status entries and do not downgrade the dependency to 0.2.x.
+- `pristine ~> 0.4.0` is a hard dependency.
+- The retained `PREREQUISITE_PRISTINE_0.3.0.md` records the earlier status-range prerequisite; Pristine 0.4 is now the runtime contract.
+- Do not replace `status_retry_ranges: [%{range: 500..599, ...}]` with 100 exact status entries and do not downgrade the dependency.
+- Cancellation tokens/capability discovery come directly from Pristine 0.4; do not add a TypeSafe transport cancellation engine.
 - `mix typesafe.prereq` is the executable capability gate.
 
 ## Dependency / Poncho behavior
@@ -54,27 +53,27 @@ one client rather than separate sync/async class trees.
 For intentional upstream/codegen changes, run in this order after generation
 (for ordinary changes use the non-regenerating `scripts/check_handoff.sh`):
 
-1. Complete and QC `PREREQUISITE_PRISTINE_0.3.0.md` in Pristine.
-2. `mix deps.get`
-3. `mix typesafe.prereq`
-4. `mix typesafe.refresh --project-root .` when validating live upstream parity
-5. `mix typesafe.generate --project-root .`
-6. `mix format --check-formatted`
-7. `mix compile --warnings-as-errors`
-8. `mix test`
-9. `mix test --include live` with `TYPESAFE_API_KEY`
-10. `mix credo --strict`
-11. `mix dialyzer`
-12. `mix docs --warnings-as-errors`
+1. `mix deps.get`
+2. `mix typesafe.prereq`
+3. `mix typesafe.refresh --project-root .` when validating live upstream parity
+4. `mix typesafe.generate --project-root .` only for intentional upstream/codegen changes
+5. `mix format --check-formatted`
+6. `mix compile --warnings-as-errors`
+7. `mix test`
+8. `mix test --include live` with `TYPESAFE_API_KEY` when release policy requires it
+9. `mix credo --strict`
+10. `mix dialyzer`
+11. `mix docs --warnings-as-errors`
+12. `mix typesafe.schema.verify`
 13. `mix typesafe.verify --project-root .`
 14. `mix hex.build --unpack`
+15. `mix ci` as the final aggregate gate
 
 Do not call the handoff complete while any applicable gate is red.
 
-## 0.2.0 semantic layer and release discipline
+## 0.3.0 semantic layer and release discipline
 
-- Read `docs/implementation/0.2.0/README.md` and `HANDOFF.md` before changing the
-  semantic surface. Keep public response/answer structs additive; helper namespaces
+- Read `docs/implementation/0.3.0/README.md`, the retained 0.2 implementation record, and `HANDOFF.md` before changing the semantic surface. Keep public response/answer structs additive; helper namespaces
   are not a second Result hierarchy.
 - Legacy constructors/system_one remain parity APIs. Strict Question.* / evaluate
   own semantic counts, protected extras, caller identity and relational validation.
@@ -89,6 +88,6 @@ Do not call the handoff complete while any applicable gate is red.
 - Run schema verification in addition to codegen verification. Do not regenerate
   before a freshness gate just to hide pre-existing drift. Only intentional source
   edits justify regeneration; review generated diffs.
-- Release is 0.2.0, dated 2026-09-17. Historical/dependency/upstream versions are
+- Release is 0.3.0, dated 2026-09-17. Historical/dependency/upstream versions are
   not placeholders to globally replace. Do not assert publication or successful
   BEAM gates until they have actually run.

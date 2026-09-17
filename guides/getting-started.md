@@ -1,10 +1,10 @@
-# Getting Started with 0.2.0
+# Getting Started with 0.3.0
 
 ## Install and configure
 
-Add `{:typesafe_sdk, "~> 0.2.0"}` to your application's dependencies once this
+Add `{:typesafe_sdk, "~> 0.3.0"}` to your application's dependencies once this
 release is published. For a local checkout before publication, use
-`{:typesafe_sdk, path: "../typesafe_sdk"}`. Pristine remains the runtime dependency.
+`{:typesafe_sdk, path: "../typesafe_sdk"}`. Pristine `~> 0.4.0` is the runtime dependency and owns HTTP execution, retries, and verified unary cancellation.
 
 ```elixir
 # Your host application's config/runtime.exs
@@ -39,8 +39,11 @@ questions. `evaluate!` and `system_one!` similarly raise normalized request erro
 
 Existing `TypeSafeSDK.Noul`, `Choice` and `Score` constructors remain unchanged.
 `system_one(client, state, %{q: legacy_question})` still returns string-keyed
-answers. Use [migration](migration-0.2.md) when moving application code to
+answers. Use [the 0.3 migration guide](migration-0.3.md) for the new runtime controls, and [the 0.2 migration guide](migration-0.2.md) when moving legacy application code to
 `evaluate`; do not replace legacy constructor calls with tuple destructuring.
 
 Continue with [questions](semantic-questions.md), [answers](answers-and-confidence.md),
 [batching](batching.md), [testing](testing.md) and the [evaluation workflow](evaluating-decisions.md).
+
+
+For cancellation, request-byte budgets, response contracts, retry inheritance, Prepared composition/fingerprints and stable metadata, continue with [runtime controls](runtime-controls.md).

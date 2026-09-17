@@ -1,186 +1,254 @@
-# TypeSafeSDK 0.2.0 implementation handoff
+# TypeSafeSDK 0.3.0 implementation handoff
 
-## Live examples and publish routine
+Release target: **0.3.0**
 
-The 2026-09-17 documentation pass adds four live-only walkthroughs and
-`bash examples/run_all.sh`. The complete runner passed against the live service,
-including all 20 labeled evaluation records. No runnable example uses fixtures.
-See [the example catalog](examples/README.md) for coverage and
-[PUBLISHING.md](PUBLISHING.md) for the full final test/build/publish/tag sequence.
-The prior overlay history below is retained as historical provenance.
+Release date: **2026-09-17**
 
-## Native QC status
+Baseline: supplied TypeSafeSDK 0.2.0 Repomix source
 
-The overlay has now been compiled and exercised on Elixir 1.19.5 / OTP 28.3.1.
-The complete non-regenerating handoff script passes, including strict Credo,
-Dialyzer, warning-free compilation/ExDoc, schema/codegen verification and Hex build.
-Live tests pass: **1 doctest, 98 tests, zero failures**. Real recording and the
-12-record development / eight-record held-out evaluation workflow also passed.
-See [VERIFICATION.md](VERIFICATION.md) for corrections and execution details.
+Runtime reference: supplied Pristine 0.4.0 source
 
-Compatibility tests passed for Elixir/OTP **1.18.4/27.3**, **1.19.5/28.3.1**,
-and **1.20.4/29.0.6**. The complete initial-fix CI run is
-[green](https://github.com/nshkrdotcom/typesafe_sdk/actions/runs/35207775433).
-The cold-start follow-up has the same green test matrix; its quality job is
-[tracked here](https://github.com/nshkrdotcom/typesafe_sdk/actions/runs/35207892855).
-The unpacked package passed a cold-start consumer smoke test on 1.19.5/28.3.1
-with Hex runtime dependencies and no workspace bootstrap. That smoke test preceded publication.
-The earlier delivery-environment limitations below describe the original overlay,
-not the native QC performed in this checkout.
+## Implementation summary
 
-Release date: **2026-09-17**. Base: the **97 packed files in typesafe_sdk(2).xml**.
-Apply the overlay at that repository's root. It contains only new/modified paths;
-there are no deletions, vendored dependencies, BEAM binaries or fake live captures.
-The source version is 0.2.0; consult the [Hex release](https://hex.pm/packages/typesafe_sdk/0.2.0) for publication status.
+This change set implements the full requested TypeSafeSDK 0.3.0 semantic/runtime
+control layer while preserving Pristine as the only HTTP/resilience runtime.
+The implementation adds direct Pristine cancellation forwarding, fail-closed
+runtime capability delegation, cancellation-aware bounded batching, structural
+retry-policy inheritance, Prepared composition/fingerprints, opt-in strict
+response contracts, serialized request-byte budgets, pure model-catalog helpers,
+and privacy-safe response/error metadata.
 
-Read [the specification](docs/implementation/0.2.0/SPECIFICATION.md),
-[implementation status](docs/implementation/0.2.0/IMPLEMENTATION_STATUS.md), and
-[verification record](VERIFICATION.md). The standalone planning ZIP contains the
-same six planning documents that are retained under docs/implementation/0.2.0.
+0.2 behavior remains the default where required: strict response contracts and
+request budgets are opt-in, the raw/parity path remains available, existing
+semantic constructors/enriched answers/test seams remain in place, and TypeSafe
+does not implement its own HTTP client, retry loop, circuit breaker, global
+queue, or physical cancellation transport.
 
-## What is implemented
+## Architecture decisions
 
-Strict tuple/bang question constructors, top-level conveniences, JSON validation,
-ordered Choice encoding, finite caller-key restoration, cached Prepared sets,
-relational response validation, raw fidelity, enriched existing answer structs,
-uncertainty and response helpers, semantic evaluate/evaluate!, supervised indexed
-batch streams, consumer fixtures at the real Pristine transport seam, safe
-semantic telemetry, retry queries, runtime-capability auditing, schema export,
-labeled decision evaluation and release/documentation/CI changes are built.
+- **Cancellation ownership:** callers pass the exact `Pristine.Cancellation`
+  token. TypeSafe validates/forwards it, preserves `%Pristine.Error{type:
+  :cancelled}` as the cause, and stops future batch scheduling. Physical unary
+  cancellation and retry-wait cancellation remain Pristine 0.4 responsibilities.
+- **Capability discovery:** `TypeSafeSDK.RuntimeCapabilities` delegates to
+  `Pristine.RuntimeCapabilities.transport/1`. Missing/malformed support remains
+  `:unverified`; no adapter-name or callback-presence inference is used.
+- **Retry ownership:** provider/Pristine defaults -> client defaults -> per-call
+  override. Omitted per-call fields inherit. `false` disables. TypeSafe only
+  resolves policy and projects it into Pristine; it never executes a retry.
+- **Prepared compatibility:** the existing `%Prepared{keys: wire_to_caller}`
+  field is retained for 0.2 struct compatibility. The new public
+  `Prepared.keys/1` returns ordered caller keys. Composition always rebuilds via
+  `Prepared.new/1`, re-running semantic/request-relative validation.
+- **Fingerprint:** `typesafe-prepared-v1:<sha256>` hashes only deterministic
+  semantic request meaning/order. Runtime state, credentials, retry settings,
+  cancellation, concurrency, telemetry, timestamps and loggers are excluded.
+- **Request bytes:** the same request map handed to the generated operation is
+  JSON-sized before egress; an oversized request fails locally without exposing
+  the body in error metadata.
+- **Response contracts:** default behavior remains 0.2-compatible. Strict
+  unknown-answer and exact allowed-model checks are opt-in and reuse the existing
+  `%TypeSafeSDK.Error{}` hierarchy.
+- **Model helpers:** lookup is exact; latest selection uses objective
+  `release_date` ordering and fails closed on invalid/tied ordering.
+- **Metadata:** public metadata helpers expose bounded structural fields only;
+  no credentials, auth headers, prompt/state/question text, raw bodies, or opaque
+  transport internals are returned.
 
-The legacy constructors still return their original structs. `system_one` stays
-wire-oriented and string-keyed; `evaluate` adds strict semantics. Both use the
-same generated Pristine operations. The generated clients/schemas, bounded
-OpenAPI, provider IR and generation inventories are unchanged. See the migration
-guide for intentionally stronger probability/usage validation in known responses.
+## Pristine 0.4.0 integration
 
-## Historical overlay verification
+`mix.exs` now requires `pristine ~> 0.4.0`. TypeSafe consumes these supplied
+Pristine contracts directly:
 
-The original overlay environment did not contain `elixir`, `erl`, or `mix`.
-Dependency access was unavailable there. No compiler, ExUnit, formatter, Credo, Dialyzer, ExDoc, Pristine
-verification, Hex build or live API gate was run. There is no asserted green
-runtime result and no measured model accuracy/latency/calibration. Tests are
-implemented but not executed; source review is not an executed TDD cycle.
+- `Pristine.Cancellation`;
+- `%Pristine.Error{type: :cancelled}`;
+- `Pristine.RuntimeCapabilities.transport/1`;
+- optional transport cancellation capabilities/`send_cancelable/3` through
+  Pristine's own pipeline; and
+- Pristine-owned cancellation-aware Foundation retry waits/classification.
 
-The completed static delivery checks are recorded in VERIFICATION.md. They
-include schema validation/reference resolution, exact schema-source derivation,
-serialized configuration/data parsing, source lexical/delimiter screening,
-version/link/asset checks and overlay reconstruction. Lexical screening is not
-an Elixir parser and cannot establish that the code compiles.
+TypeSafe does **not** depend directly on `execution_plane_http` and does not add
+Finch/Mint/Req/HTTPoison/Hackney as a second runtime stack.
 
-## Target-host completion instructions
+## Exact modified files (40)
 
-Finish this implementation in the real BEAM environment: execute the tests,
-fix defects in production code/tests/docs, repeat until the required gates are
-green, and record exact results. Do not replace Pristine with a second runtime,
-disable assertions, or present fixture-only behavior as production support.
+- `AGENTS.md`
+- `CHANGELOG.md`
+- `HANDOFF.md`
+- `PORT_PARITY.md`
+- `PUBLISHING.md`
+- `README.md`
+- `VERIFICATION.md`
+- `cheatsheets/typesafe_sdk.cheatmd`
+- `examples/README.md`
+- `guides/batching.md`
+- `guides/client-configuration.md`
+- `guides/errors-and-retries.md`
+- `guides/generation-and-verification.md`
+- `guides/getting-started.md`
+- `guides/index.md`
+- `guides/models.md`
+- `guides/runtime-capabilities.md`
+- `lib/mix/tasks/typesafe.capabilities.ex`
+- `lib/mix/tasks/typesafe.prereq.ex`
+- `lib/typesafe_sdk.ex`
+- `lib/typesafe_sdk/batch.ex`
+- `lib/typesafe_sdk/client.ex`
+- `lib/typesafe_sdk/error.ex`
+- `lib/typesafe_sdk/evaluation.ex`
+- `lib/typesafe_sdk/models.ex`
+- `lib/typesafe_sdk/prepared.ex`
+- `lib/typesafe_sdk/response.ex`
+- `lib/typesafe_sdk/retry_policy.ex`
+- `lib/typesafe_sdk/runtime_capabilities.ex`
+- `lib/typesafe_sdk/semantic_response.ex`
+- `lib/typesafe_sdk/system_one.ex`
+- `lib/typesafe_sdk/system_one_response.ex`
+- `lib/typesafe_sdk/test/transport.ex`
+- `mix.exs`
+- `priv/json_schema/models-response.json`
+- `priv/json_schema/system-one-request.json`
+- `priv/json_schema/system-one-response.json`
+- `test/typesafe_sdk/release_consistency_test.exs`
+- `test/typesafe_sdk/runtime_capabilities_test.exs`
+- `test/typesafe_sdk/schema_test.exs`
 
-Use the existing contributor setup in [README](README.md) for the pinned
-Pristine codegen/provider-testkit workspace bootstrap. Runtime Pristine now requires
-`~> 0.3.1`; do not downgrade it. The composite CI setup preserves the baseline's
-pinned maintenance-tools revision. Keep dependency versions separate from the
-SDK version. No mix.lock was present in the supplied packed baseline; resolve
-and review dependencies according to repository release policy, not an invented
-lock file from an environment that could not fetch them.
+## Exact new files (10)
 
-From the applied repository root:
+- `docs/implementation/0.3.0/README.md`
+- `guides/migration-0.3.md`
+- `guides/runtime-controls.md`
+- `lib/typesafe_sdk/request_budget.ex`
+- `lib/typesafe_sdk/response_contract.ex`
+- `test/typesafe_sdk/metadata_v030_test.exs`
+- `test/typesafe_sdk/models_v030_test.exs`
+- `test/typesafe_sdk/prepared_v030_test.exs`
+- `test/typesafe_sdk/response_contract_v030_test.exs`
+- `test/typesafe_sdk/runtime_controls_v030_test.exs`
+
+No files are intentionally deleted by this overlay.
+
+## Source/static checks actually run
+
+The delivery container has no `elixir`, `erl`, or `mix`. The following checks
+were actually executed:
+
+```text
+git diff --check
+  -> exit 0
+
+bash -n scripts/check_handoff.sh
+bash -n examples/run_all.sh
+  -> both exit 0
+
+Python JSON/JSONL parse of repository data
+  -> no parse failures
+
+Release/version consistency screen
+  -> TypeSafe 0.3.0, Pristine ~> 0.4.0, three schema markers 0.3.0,
+     changelog date 2026-09-17
+
+Required-API/boundary screen
+  -> all requested 0.3 marker groups present
+  -> no new TypeSafe HTTP dependency/direct execution_plane_http dependency
+
+Relative Markdown-link resolution
+  -> no missing relative targets
+
+Elixir source lexical screen
+  -> delimiter screen over repository .ex/.exs files reported no findings
+  -> single-backslash default-argument typo screen reported no findings
+
+Changed-file placeholder screen
+  -> no TODO/TBD/FIXME findings
+```
+
+These checks do not prove that Elixir code compiles. `VERIFICATION.md` records
+the same boundary explicitly.
+
+## TDD status
+
+Focused 0.3 ExUnit tests were added for the requested behaviors. A static RED
+screen against the reconstructed 0.2 baseline established that the new public
+API markers were absent before implementation. Executable ExUnit RED/GREEN runs
+were impossible because the container has no BEAM toolchain; do not represent
+these tests as passed until they run on the target host.
+
+## Required target-host commands
+
+Run from the repository root in the real Elixir/OTP environment:
 
 ```bash
 mix deps.get
 mix typesafe.prereq
-# Formatting was not executable in the delivery environment.
-mix format
-# Inspect the formatter diff; do not conceal generated-artifact drift.
-git diff --stat
-bash scripts/check_handoff.sh
+mix format --check-formatted
+mix compile --warnings-as-errors
+mix test
+mix credo --strict
+mix dialyzer
+mix docs --warnings-as-errors
+mix typesafe.schema.verify
+mix typesafe.verify --project-root .
+mix hex.build --unpack
+mix ci
 ```
 
-The script checks formatting, warnings-as-errors compilation, ExUnit, strict
-Credo, Dialyzer, ExDoc, schema freshness, generated artifact freshness and the Hex
-package. It deliberately does not refresh upstream data or regenerate artifacts
-before checking them, and does not publish, commit or make live calls. Fix each
-failure and rerun. Run the configured compatibility matrix as well; those pairs
-are test targets, not locally established support evidence.
-
-### Highest-value runtime integration checks
-
-* Verify the cached Jason.Fragment and ordered Choice data pass through the real
-  Pristine serializer unchanged, including >32 options. The integration tests
-  inspect the actual HTTP request bytes rather than an alternate serializer.
-* Confirm 529/599/200 sequences, provider retry headers, timeout overrides, error
-  metadata and retry counts against the installed Pristine 0.3 runtime. Test
-  response fixtures, malformed known answers and raw unknown future answers.
-* Exercise the synchronized batch tests: bounded workers, ordered/unordered input
-  association, ordered prefetch/window bounds, timeout, worker exit, early halt, trapping callers and caller
-  death. Check for lingering lifecycle/supervisor/task processes. Do not add
-  sleeps in place of the synchronization contracts or weaken cleanup assertions.
-* Attach telemetry handlers and check automatic metadata excludes state,
-  questions, headers, keys, raw errors and exception reasons/stacktraces. Explicit
-  caller metadata is opt-in content. Abrupt kill cannot guarantee a stop event.
-* Run the labeled example's loader/metrics/policy tests, schema task round trips,
-  doctests and release-consistency tests. Inspect the installed package contents
-  and use it from a host project without workspace overrides.
-
-### Runtime bounds are not assumed
+Then run the repository's configured compatibility matrix. If release policy
+requires credentialed acceptance, run:
 
 ```bash
-mix typesafe.capabilities
-```
-
-Unadvertised global outstanding-request bounds, queue bounds, streaming response
-byte limits, deterministic overload and physical cancellation cleanup report
-`unverified`. `runtime_requirements` fails closed if an adapter does not advertise
-a requested capability. Advertising is not independent proof: verify enforcement
-in the actual owning Pristine transport. The SDK's bounded batch tasks are not a
-global HTTP queue or streaming response limit. Do not mark these capabilities
-green based on unit tests of the advertisement parser.
-
-## Real API acceptance (requires explicit credentials)
-
-Set TYPESAFE_API_KEY in the invoking environment; never commit it. API evaluation
-may incur charges. Existing retry defaults are retained and can replay ambiguous
-submissions; the record task explicitly disables retries.
-
-```bash
-# Inspect the existing live tests and account/model configuration first.
-mix test --include live
+mix test --include live --warnings-as-errors
+bash examples/run_all.sh
 mix typesafe.record --output tmp/live --baseline test/fixtures/live
-
-mix run examples/evaluation/run.exs -- \
-  --split development --sweep --max-auto-error 0.05 \
-  --output tmp/development.json
-mix run examples/evaluation/run.exs -- \
-  --split held-out --policy tmp/development.policy.json \
-  --output tmp/held-out.json
 ```
 
-The live tag is excluded by default; `--include live` enables it explicitly.
-The capture task makes two real operations
-(models and mixed evaluation), retains actual responses/metadata, and writes
-review diffs without changing approved baselines. There is intentionally no
-invented initial baseline. Review and explicitly approve first captures.
+The live operations can incur charges. Cancellation proves local transport
+termination only when the configured Pristine transport advertises verified
+support; it does not prove the remote service never received/began the request
+and does not roll back remote side effects.
 
-The evaluation data is synthetic illustrative data, not calibration evidence.
-Development threshold sweeps reuse predictions. Held-out runs require a frozen
-policy/model and reject threshold overrides. No eligible development policy is
-reported without fallback thresholds; incomplete runs do not freeze a policy.
-Reports retain observations on policy-selection failure and flag model mismatch.
+## Remaining compile/runtime risks
 
-The scheduled workflow stays disabled until the repository variable
-TYPESAFE_LIVE_ENABLED is true and TYPESAFE_API_KEY is configured. No pull-request
-trigger or automatic fixture commit is added.
+1. **Compiler/formatter confirmation:** all new Elixir source still needs real
+   `mix format --check-formatted` and warnings-as-errors compilation.
+2. **Pristine contract compatibility:** verify TypeSafe's option projection
+   against the installed/published Pristine 0.4.0 package, not only the supplied
+   reference source.
+3. **Prepared golden vector:** run the fingerprint golden-vector tests under the
+   pinned Jason/Elixir versions to confirm byte-for-byte canonical encoding.
+4. **Serialized-size identity:** run no-egress tests to prove the measured body
+   is the exact JSON representation ultimately serialized by the generated /
+   Pristine path, including `Jason.Fragment` and Unicode boundaries.
+5. **Cancellation races/cleanup:** run synchronized token-forwarding and batch
+   cancellation tests to confirm worker/watcher/lifecycle cleanup under OTP.
+6. **Static analysis/docs:** Credo, Dialyzer and ExDoc may expose style/type/link
+   issues invisible to source screening.
+7. **Generated freshness/package:** codegen/schema verification and unpacked Hex
+   build must be run without regenerating first.
+
+## First fixes if target-host verification exposes an issue
+
+- For formatter-only failures, run `mix format`, inspect the diff, and keep only
+  formatting changes.
+- For Pristine option/capability mismatches, adapt the narrow TypeSafe projection
+  to the actual 0.4 public contract; do not add a local retry/cancellation engine.
+- For fingerprint failures, inspect canonical semantic encoding and update code
+  rather than weakening/removing the golden vector unless the versioned
+  fingerprint contract itself is intentionally changed.
+- For request-budget failures, keep one semantic request value for sizing and
+  sending; do not introduce a second serializer representation.
+- For batch cancellation failures, preserve existing `Batch.Lifecycle` ownership
+  and fix scheduling/monitor cleanup rather than adding a global queue.
+- For codegen/schema drift, identify whether upstream source actually changed;
+  do not regenerate solely to make verification green.
 
 ## Release closure
 
-Update this handoff/verification record with actual commands, versions, pass/fail
-counts and remaining limitations. Follow [PUBLISHING.md](PUBLISHING.md) only after
-the intended release gates pass. Preserve the original MIT license, README
-license ending, artwork, historical changelog and upstream/tooling provenance.
-Commit the finished changes after successful QC; publication remains a separate,
-explicit maintainer action.
+Do not publish 0.3.0 until the BEAM gates above are green and their exact results
+are appended to this handoff/`VERIFICATION.md`. Follow `PUBLISHING.md` after QC.
 
-Suggested commit subject:
+Suggested conventional commit subject:
 
 ```text
-feat: release TypeSafeSDK 0.2.0 semantic evaluation and decision tooling
+feat: release TypeSafe SDK 0.3.0 runtime controls and semantic contracts
 ```
