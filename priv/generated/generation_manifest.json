@@ -1,0 +1,51 @@
+{
+  "artifact_files": [
+    "priv/generated/docs_inventory.json",
+    "priv/generated/generation_manifest.json",
+    "priv/generated/operation_auth_policies.json",
+    "priv/generated/provider_ir.json",
+    "priv/generated/source_inventory.json"
+  ],
+  "auth_policy_count": 1,
+  "fingerprints": {
+    "generation": {
+      "generator": "pristine_codegen"
+    },
+    "sources": [
+      {
+        "kind": "openapi",
+        "path": "priv/upstream/openapi.json",
+        "sha256": "7265a2387f653b3584cae10db45365cf3fadaac3262e12eba4a415b5d32e3c46"
+      }
+    ]
+  },
+  "generated_files": [
+    "lib/typesafe_sdk/generated/client.ex",
+    "lib/typesafe_sdk/generated/models.ex",
+    "lib/typesafe_sdk/generated/runtime_schema.ex",
+    "lib/typesafe_sdk/generated/schemas/schemas/choice_answer.ex",
+    "lib/typesafe_sdk/generated/schemas/schemas/choice_question.ex",
+    "lib/typesafe_sdk/generated/schemas/schemas/model_metadata.ex",
+    "lib/typesafe_sdk/generated/schemas/schemas/model_metadata_list.ex",
+    "lib/typesafe_sdk/generated/schemas/schemas/noul_answer.ex",
+    "lib/typesafe_sdk/generated/schemas/schemas/noul_criteria.ex",
+    "lib/typesafe_sdk/generated/schemas/schemas/noul_question.ex",
+    "lib/typesafe_sdk/generated/schemas/schemas/score_answer.ex",
+    "lib/typesafe_sdk/generated/schemas/schemas/score_question.ex",
+    "lib/typesafe_sdk/generated/schemas/schemas/system_one_request.ex",
+    "lib/typesafe_sdk/generated/schemas/schemas/system_one_response.ex",
+    "lib/typesafe_sdk/generated/schemas/schemas/usage.ex",
+    "lib/typesafe_sdk/generated/system_one.ex"
+  ],
+  "operation_count": 2,
+  "pagination_policy_count": 0,
+  "provider": {
+    "base_module": "TypeSafeSDK",
+    "client_module": "TypeSafeSDK.Client",
+    "id": "typesafe",
+    "package_app": "typesafe_sdk",
+    "package_name": "typesafe_sdk",
+    "source_strategy": "openapi_snapshot"
+  },
+  "schema_count": 12
+}

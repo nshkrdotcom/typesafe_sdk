@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: '28.3.1'
+          elixir-version: '1.19.5'
+      - run: mix deps.get
+      - run: mix typesafe.prereq
+      - run: mix typesafe.generate --project-root .
+      - run: mix format --check-formatted
+      - run: mix compile --warnings-as-errors
+      - run: mix test
+      - run: mix credo --strict
+      - run: mix dialyzer
+      - run: mix docs --warnings-as-errors
+      - run: mix typesafe.verify --project-root .
+      - run: mix hex.build --unpack

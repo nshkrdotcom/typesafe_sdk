@@ -1,0 +1,9 @@
+{
+  "sources": [
+    {
+      "kind": "openapi",
+      "path": "priv/upstream/openapi.json",
+      "sha256": "7265a2387f653b3584cae10db45365cf3fadaac3262e12eba4a415b5d32e3c46"
+    }
+  ]
+}

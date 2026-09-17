@@ -1,0 +1,21 @@
+{
+  "examples": [],
+  "guides": [
+    {
+      "path": "guides/system-one-and-questions.md"
+    },
+    {
+      "path": "guides/models.md"
+    }
+  ],
+  "operations": {
+    "list_models": {
+      "description": "List the models and aliases available to the authenticated account.\n\nPass a returned model name as `model` in a POST /v1/systemone request.",
+      "summary": "Models V1"
+    },
+    "system_one": {
+      "description": "Answer one or more questions about the content supplied in `state`.\n\nYou can mix question types in one request. Answers use the same names as the\nquestions, so you can match each result to its question. The response also includes\nthe model used and token usage.",
+      "summary": "Systemone"
+    }
+  }
+}

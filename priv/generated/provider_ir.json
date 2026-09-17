@@ -1,0 +1,846 @@
+{
+  "artifact_plan": {
+    "artifacts": [
+      {
+        "id": "lib/typesafe_sdk/generated/client.ex",
+        "kind": "code",
+        "path": "lib/typesafe_sdk/generated/client.ex"
+      },
+      {
+        "id": "lib/typesafe_sdk/generated/models.ex",
+        "kind": "code",
+        "path": "lib/typesafe_sdk/generated/models.ex"
+      },
+      {
+        "id": "lib/typesafe_sdk/generated/runtime_schema.ex",
+        "kind": "code",
+        "path": "lib/typesafe_sdk/generated/runtime_schema.ex"
+      },
+      {
+        "id": "lib/typesafe_sdk/generated/schemas/schemas/choice_answer.ex",
+        "kind": "code",
+        "path": "lib/typesafe_sdk/generated/schemas/schemas/choice_answer.ex"
+      },
+      {
+        "id": "lib/typesafe_sdk/generated/schemas/schemas/choice_question.ex",
+        "kind": "code",
+        "path": "lib/typesafe_sdk/generated/schemas/schemas/choice_question.ex"
+      },
+      {
+        "id": "lib/typesafe_sdk/generated/schemas/schemas/model_metadata.ex",
+        "kind": "code",
+        "path": "lib/typesafe_sdk/generated/schemas/schemas/model_metadata.ex"
+      },
+      {
+        "id": "lib/typesafe_sdk/generated/schemas/schemas/model_metadata_list.ex",
+        "kind": "code",
+        "path": "lib/typesafe_sdk/generated/schemas/schemas/model_metadata_list.ex"
+      },
+      {
+        "id": "lib/typesafe_sdk/generated/schemas/schemas/noul_answer.ex",
+        "kind": "code",
+        "path": "lib/typesafe_sdk/generated/schemas/schemas/noul_answer.ex"
+      },
+      {
+        "id": "lib/typesafe_sdk/generated/schemas/schemas/noul_criteria.ex",
+        "kind": "code",
+        "path": "lib/typesafe_sdk/generated/schemas/schemas/noul_criteria.ex"
+      },
+      {
+        "id": "lib/typesafe_sdk/generated/schemas/schemas/noul_question.ex",
+        "kind": "code",
+        "path": "lib/typesafe_sdk/generated/schemas/schemas/noul_question.ex"
+      },
+      {
+        "id": "lib/typesafe_sdk/generated/schemas/schemas/score_answer.ex",
+        "kind": "code",
+        "path": "lib/typesafe_sdk/generated/schemas/schemas/score_answer.ex"
+      },
+      {
+        "id": "lib/typesafe_sdk/generated/schemas/schemas/score_question.ex",
+        "kind": "code",
+        "path": "lib/typesafe_sdk/generated/schemas/schemas/score_question.ex"
+      },
+      {
+        "id": "lib/typesafe_sdk/generated/schemas/schemas/system_one_request.ex",
+        "kind": "code",
+        "path": "lib/typesafe_sdk/generated/schemas/schemas/system_one_request.ex"
+      },
+      {
+        "id": "lib/typesafe_sdk/generated/schemas/schemas/system_one_response.ex",
+        "kind": "code",
+        "path": "lib/typesafe_sdk/generated/schemas/schemas/system_one_response.ex"
+      },
+      {
+        "id": "lib/typesafe_sdk/generated/schemas/schemas/usage.ex",
+        "kind": "code",
+        "path": "lib/typesafe_sdk/generated/schemas/schemas/usage.ex"
+      },
+      {
+        "id": "lib/typesafe_sdk/generated/system_one.ex",
+        "kind": "code",
+        "path": "lib/typesafe_sdk/generated/system_one.ex"
+      },
+      {
+        "id": "provider_ir",
+        "kind": "artifact",
+        "path": "priv/generated/provider_ir.json"
+      },
+      {
+        "id": "generation_manifest",
+        "kind": "artifact",
+        "path": "priv/generated/generation_manifest.json"
+      },
+      {
+        "id": "docs_inventory",
+        "kind": "artifact",
+        "path": "priv/generated/docs_inventory.json"
+      },
+      {
+        "id": "source_inventory",
+        "kind": "artifact",
+        "path": "priv/generated/source_inventory.json"
+      },
+      {
+        "id": "operation_auth_policies",
+        "kind": "artifact",
+        "path": "priv/generated/operation_auth_policies.json"
+      }
+    ],
+    "forbidden_paths": [],
+    "generated_code_dir": "lib/typesafe_sdk/generated"
+  },
+  "auth_policies": [
+    {
+      "id": "bearer",
+      "mode": "use_client_default",
+      "override_source": null,
+      "security_schemes": [
+        "BearerAuth"
+      ],
+      "strategy_label": "Bearer API key"
+    }
+  ],
+  "docs_inventory": {
+    "examples": [],
+    "guides": [
+      {
+        "path": "guides/system-one-and-questions.md"
+      },
+      {
+        "path": "guides/models.md"
+      }
+    ],
+    "operations": {
+      "list_models": {
+        "description": "List the models and aliases available to the authenticated account.\n\nPass a returned model name as `model` in a POST /v1/systemone request.",
+        "summary": "Models V1"
+      },
+      "system_one": {
+        "description": "Answer one or more questions about the content supplied in `state`.\n\nYou can mix question types in one request. Answers use the same names as the\nquestions, so you can match each result to its question. The response also includes\nthe model used and token usage.",
+        "summary": "Systemone"
+      }
+    }
+  },
+  "fingerprints": {
+    "generation": {
+      "generator": "pristine_codegen"
+    },
+    "sources": [
+      {
+        "kind": "openapi",
+        "path": "priv/upstream/openapi.json",
+        "sha256": "7265a2387f653b3584cae10db45365cf3fadaac3262e12eba4a415b5d32e3c46"
+      }
+    ]
+  },
+  "operations": [
+    {
+      "auth_policy_id": "bearer",
+      "body": {
+        "mode": "none"
+      },
+      "description": "List the models and aliases available to the authenticated account.\n\nPass a returned model name as `model` in a POST /v1/systemone request.",
+      "docs_metadata": {
+        "doc": "List the models and aliases available to the authenticated account.\n\nPass a returned model name as `model` in a POST /v1/systemone request.",
+        "examples": []
+      },
+      "form_data": {
+        "mode": "none"
+      },
+      "function": "list",
+      "header_params": [],
+      "id": "list_models",
+      "method": "get",
+      "module": "TypeSafeSDK.Generated.Models",
+      "pagination_policy_id": null,
+      "path_params": [],
+      "path_template": "/v1/models",
+      "query_params": [],
+      "request_schema": null,
+      "response_schemas": {
+        "200": "TypeSafeSDK.Generated.Schemas.ModelMetadataList"
+      },
+      "runtime_metadata": {
+        "resource": "models",
+        "retry_group": "typesafe.default"
+      },
+      "summary": "Models V1"
+    },
+    {
+      "auth_policy_id": "bearer",
+      "body": {
+        "mode": "remaining"
+      },
+      "description": "Answer one or more questions about the content supplied in `state`.\n\nYou can mix question types in one request. Answers use the same names as the\nquestions, so you can match each result to its question. The response also includes\nthe model used and token usage.",
+      "docs_metadata": {
+        "doc": "Answer one or more questions about the content supplied in `state`.\n\nYou can mix question types in one request. Answers use the same names as the\nquestions, so you can match each result to its question. The response also includes\nthe model used and token usage.",
+        "examples": []
+      },
+      "form_data": {
+        "mode": "none"
+      },
+      "function": "create",
+      "header_params": [],
+      "id": "system_one",
+      "method": "post",
+      "module": "TypeSafeSDK.Generated.SystemOne",
+      "pagination_policy_id": null,
+      "path_params": [],
+      "path_template": "/v1/systemone",
+      "query_params": [],
+      "request_schema": "TypeSafeSDK.Generated.Schemas.SystemOneRequest",
+      "response_schemas": {
+        "200": "TypeSafeSDK.Generated.Schemas.SystemOneResponse"
+      },
+      "runtime_metadata": {
+        "resource": "system_one",
+        "retry_group": "typesafe.default"
+      },
+      "summary": "Systemone"
+    }
+  ],
+  "pagination_policies": [],
+  "provider": {
+    "base_module": "TypeSafeSDK",
+    "client_module": "TypeSafeSDK.Client",
+    "id": "typesafe",
+    "package_app": "typesafe_sdk",
+    "package_name": "typesafe_sdk",
+    "source_strategy": "openapi_snapshot"
+  },
+  "runtime_defaults": {
+    "base_url": "https://api.typesafe.ai",
+    "default_headers": {
+      "Accept": "application/json"
+    },
+    "retry_defaults": {
+      "backoff_initial": 0.5,
+      "backoff_max": 5.0,
+      "max_retries": 2
+    },
+    "serializer": "Pristine.Adapters.Serializer.JSON",
+    "timeout_ms": 10000,
+    "typed_responses_default": false,
+    "user_agent_prefix": "typesafe-sdk"
+  },
+  "schemas": [
+    {
+      "fields": [
+        {
+          "description": "The name of the choice with the highest probability among the question's criteria.",
+          "name": "choice",
+          "nullable": false,
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "Confidence in the selected choice, from 0 to 1. Higher values indicate greater certainty; use lower values to flag uncertain selections for review.",
+          "name": "confidence",
+          "nullable": false,
+          "required": true,
+          "type": "number"
+        },
+        {
+          "description": "Probability of each choice in criteria, keyed by choice name, from 0 to 1. Shows how likely the alternatives are; values sum to approximately 1.",
+          "name": "probabilities",
+          "nullable": false,
+          "required": true,
+          "type": [
+            "map",
+            "string",
+            "number"
+          ]
+        },
+        {
+          "description": "Identifies a selection from the requested choices.",
+          "name": "type",
+          "nullable": false,
+          "required": true,
+          "type": [
+            "const",
+            "choice"
+          ]
+        }
+      ],
+      "id": "ChoiceAnswer",
+      "kind": "object",
+      "module": "TypeSafeSDK.Generated.Schemas.ChoiceAnswer",
+      "source_refs": [
+        {
+          "kind": "openapi_component",
+          "name": "ChoiceAnswer"
+        }
+      ],
+      "type_name": "t"
+    },
+    {
+      "fields": [
+        {
+          "description": "Choice names and descriptions of when each applies. A choice without a description is interpreted by its name alone.",
+          "name": "criteria",
+          "nullable": false,
+          "required": true,
+          "type": [
+            "map",
+            "string",
+            [
+              "union",
+              [
+                "string",
+                "map",
+                [
+                  "array",
+                  "map"
+                ],
+                "null"
+              ]
+            ]
+          ]
+        },
+        {
+          "description": "What the model should decide when choosing an option.",
+          "name": "instructions",
+          "nullable": true,
+          "required": false,
+          "type": [
+            "union",
+            [
+              "string",
+              "map",
+              [
+                "array",
+                "map"
+              ],
+              "null"
+            ]
+          ]
+        },
+        {
+          "description": "Identifies a question that selects one of the choices in criteria.",
+          "name": "type",
+          "nullable": false,
+          "required": true,
+          "type": [
+            "const",
+            "choice"
+          ]
+        }
+      ],
+      "id": "ChoiceQuestion",
+      "kind": "object",
+      "module": "TypeSafeSDK.Generated.Schemas.ChoiceQuestion",
+      "source_refs": [
+        {
+          "kind": "openapi_component",
+          "name": "ChoiceQuestion"
+        }
+      ],
+      "type_name": "t"
+    },
+    {
+      "fields": [
+        {
+          "description": "Human-readable description of the model and its capabilities.",
+          "name": "description",
+          "nullable": false,
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "Model name or alias accepted by the request's model field.",
+          "name": "name",
+          "nullable": false,
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "Model release date, formatted as YYYY-MM-DD.",
+          "name": "release_date",
+          "nullable": false,
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "id": "ModelMetadata",
+      "kind": "object",
+      "module": "TypeSafeSDK.Generated.Schemas.ModelMetadata",
+      "source_refs": [
+        {
+          "kind": "openapi_component",
+          "name": "ModelMetadata"
+        }
+      ],
+      "type_name": "t"
+    },
+    {
+      "fields": [
+        {
+          "description": "Available models and aliases. Use a model's name in POST /v1/systemone requests.",
+          "name": "models",
+          "nullable": false,
+          "required": true,
+          "type": [
+            "array",
+            [
+              "TypeSafeSDK.Generated.Schemas.ModelMetadata",
+              "t"
+            ]
+          ]
+        }
+      ],
+      "id": "ModelMetadataList",
+      "kind": "object",
+      "module": "TypeSafeSDK.Generated.Schemas.ModelMetadataList",
+      "source_refs": [
+        {
+          "kind": "openapi_component",
+          "name": "ModelMetadataList"
+        }
+      ],
+      "type_name": "t"
+    },
+    {
+      "fields": [
+        {
+          "description": "Probability of a yes answer or a true statement, from 0 to 1. Values near 1 favor yes or true, values near 0 favor no or false, and values near 0.5 indicate uncertainty.",
+          "name": "noul",
+          "nullable": false,
+          "required": true,
+          "type": "number"
+        },
+        {
+          "description": "Identifies a yes/no answer.",
+          "name": "type",
+          "nullable": false,
+          "required": true,
+          "type": [
+            "const",
+            "noul"
+          ]
+        }
+      ],
+      "id": "NoulAnswer",
+      "kind": "object",
+      "module": "TypeSafeSDK.Generated.Schemas.NoulAnswer",
+      "source_refs": [
+        {
+          "kind": "openapi_component",
+          "name": "NoulAnswer"
+        }
+      ],
+      "type_name": "t"
+    },
+    {
+      "fields": [
+        {
+          "description": "What counts as a no answer.",
+          "name": "false",
+          "nullable": true,
+          "required": false,
+          "type": [
+            "union",
+            [
+              "string",
+              "map",
+              [
+                "array",
+                "map"
+              ],
+              "null"
+            ]
+          ]
+        },
+        {
+          "description": "What counts as a yes answer.",
+          "name": "true",
+          "nullable": true,
+          "required": false,
+          "type": [
+            "union",
+            [
+              "string",
+              "map",
+              [
+                "array",
+                "map"
+              ],
+              "null"
+            ]
+          ]
+        }
+      ],
+      "id": "NoulCriteria",
+      "kind": "object",
+      "module": "TypeSafeSDK.Generated.Schemas.NoulCriteria",
+      "source_refs": [
+        {
+          "kind": "openapi_component",
+          "name": "NoulCriteria"
+        }
+      ],
+      "type_name": "t"
+    },
+    {
+      "fields": [
+        {
+          "description": "Criteria clarifying what counts as a yes or no answer.",
+          "name": "criteria",
+          "nullable": true,
+          "required": false,
+          "type": [
+            "union",
+            [
+              [
+                "TypeSafeSDK.Generated.Schemas.NoulCriteria",
+                "t"
+              ],
+              "null"
+            ]
+          ]
+        },
+        {
+          "description": "The yes/no question or statement to evaluate.",
+          "name": "instructions",
+          "nullable": true,
+          "required": false,
+          "type": [
+            "union",
+            [
+              "string",
+              "map",
+              [
+                "array",
+                "map"
+              ],
+              "null"
+            ]
+          ]
+        },
+        {
+          "description": "Identifies a yes/no question or statement.",
+          "name": "type",
+          "nullable": false,
+          "required": true,
+          "type": [
+            "const",
+            "noul"
+          ]
+        }
+      ],
+      "id": "NoulQuestion",
+      "kind": "object",
+      "module": "TypeSafeSDK.Generated.Schemas.NoulQuestion",
+      "source_refs": [
+        {
+          "kind": "openapi_component",
+          "name": "NoulQuestion"
+        }
+      ],
+      "type_name": "t"
+    },
+    {
+      "fields": [
+        {
+          "description": "Confidence in the score, from 0 to 1. Higher values indicate greater certainty; use lower values to flag uncertain ratings for review.",
+          "name": "confidence",
+          "nullable": false,
+          "required": true,
+          "type": "number"
+        },
+        {
+          "description": "The requested criteria mapped to their score levels, so you can interpret the score.",
+          "name": "legend",
+          "nullable": false,
+          "required": true,
+          "type": [
+            "map",
+            "string",
+            [
+              "union",
+              [
+                "string",
+                "map",
+                [
+                  "array",
+                  "map"
+                ]
+              ]
+            ]
+          ]
+        },
+        {
+          "description": "Probability of each score level, from 0 to 1, using the same keys as legend. Shows how likely the alternatives are; values sum to approximately 1.",
+          "name": "probabilities",
+          "nullable": false,
+          "required": true,
+          "type": [
+            "map",
+            "string",
+            "number"
+          ]
+        },
+        {
+          "description": "Expected score: the probability-weighted average of the rubric levels. May fall between integer levels.",
+          "name": "score",
+          "nullable": false,
+          "required": true,
+          "type": "number"
+        },
+        {
+          "description": "Identifies a rating against the requested score levels.",
+          "name": "type",
+          "nullable": false,
+          "required": true,
+          "type": [
+            "const",
+            "score"
+          ]
+        }
+      ],
+      "id": "ScoreAnswer",
+      "kind": "object",
+      "module": "TypeSafeSDK.Generated.Schemas.ScoreAnswer",
+      "source_refs": [
+        {
+          "kind": "openapi_component",
+          "name": "ScoreAnswer"
+        }
+      ],
+      "type_name": "t"
+    },
+    {
+      "fields": [
+        {
+          "description": "Ordered descriptions of the score levels. Each description's position determines its score, starting at zero.",
+          "name": "criteria",
+          "nullable": false,
+          "required": true,
+          "type": [
+            "array",
+            [
+              "union",
+              [
+                "string",
+                "map",
+                [
+                  "array",
+                  "map"
+                ]
+              ]
+            ]
+          ]
+        },
+        {
+          "description": "What the model should rate.",
+          "name": "instructions",
+          "nullable": true,
+          "required": false,
+          "type": [
+            "union",
+            [
+              "string",
+              "map",
+              [
+                "array",
+                "map"
+              ],
+              "null"
+            ]
+          ]
+        },
+        {
+          "description": "Identifies a question that rates the content using the levels in criteria.",
+          "name": "type",
+          "nullable": false,
+          "required": true,
+          "type": [
+            "const",
+            "score"
+          ]
+        }
+      ],
+      "id": "ScoreQuestion",
+      "kind": "object",
+      "module": "TypeSafeSDK.Generated.Schemas.ScoreQuestion",
+      "source_refs": [
+        {
+          "kind": "openapi_component",
+          "name": "ScoreQuestion"
+        }
+      ],
+      "type_name": "t"
+    },
+    {
+      "fields": [
+        {
+          "description": "Name or alias of the model to use. Available names are returned by GET /v1/models.",
+          "name": "model",
+          "nullable": false,
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "Questions to ask about the content, each with a name you choose. The response uses those names to identify the answers.",
+          "name": "questions",
+          "nullable": false,
+          "required": true,
+          "type": [
+            "map",
+            "string",
+            [
+              "union",
+              [
+                [
+                  "TypeSafeSDK.Generated.Schemas.NoulQuestion",
+                  "t"
+                ],
+                [
+                  "TypeSafeSDK.Generated.Schemas.ChoiceQuestion",
+                  "t"
+                ],
+                [
+                  "TypeSafeSDK.Generated.Schemas.ScoreQuestion",
+                  "t"
+                ]
+              ]
+            ]
+          ]
+        },
+        {
+          "description": "The content all questions in this request refer to.",
+          "name": "state",
+          "nullable": false,
+          "required": true,
+          "type": [
+            "union",
+            [
+              "string",
+              "map",
+              [
+                "array",
+                "map"
+              ]
+            ]
+          ]
+        }
+      ],
+      "id": "SystemOneRequest",
+      "kind": "object",
+      "module": "TypeSafeSDK.Generated.Schemas.SystemOneRequest",
+      "source_refs": [
+        {
+          "kind": "openapi_component",
+          "name": "SystemOneRequest"
+        }
+      ],
+      "type_name": "t"
+    },
+    {
+      "fields": [
+        {
+          "description": "Answers keyed by the question names supplied in the request. Each answer's type matches its question's type.",
+          "name": "answers",
+          "nullable": false,
+          "required": true,
+          "type": [
+            "map",
+            "string",
+            [
+              "union",
+              [
+                [
+                  "TypeSafeSDK.Generated.Schemas.NoulAnswer",
+                  "t"
+                ],
+                [
+                  "TypeSafeSDK.Generated.Schemas.ScoreAnswer",
+                  "t"
+                ],
+                [
+                  "TypeSafeSDK.Generated.Schemas.ChoiceAnswer",
+                  "t"
+                ]
+              ]
+            ]
+          ]
+        },
+        {
+          "description": "Name of the model that answered the questions. May differ from the alias supplied in the request.",
+          "name": "model",
+          "nullable": false,
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "Input and output token counts for this evaluation.",
+          "name": "usage",
+          "nullable": false,
+          "required": true,
+          "type": [
+            "TypeSafeSDK.Generated.Schemas.Usage",
+            "t"
+          ]
+        }
+      ],
+      "id": "SystemOneResponse",
+      "kind": "object",
+      "module": "TypeSafeSDK.Generated.Schemas.SystemOneResponse",
+      "source_refs": [
+        {
+          "kind": "openapi_component",
+          "name": "SystemOneResponse"
+        }
+      ],
+      "type_name": "t"
+    },
+    {
+      "fields": [
+        {
+          "description": "Number of billable input tokens used to evaluate the request.",
+          "name": "input_tokens",
+          "nullable": false,
+          "required": true,
+          "type": "integer"
+        },
+        {
+          "description": "Number of output tokens used to answer the questions. Output tokens are currently free of charge.",
+          "name": "output_tokens",
+          "nullable": false,
+          "required": true,
+          "type": "integer"
+        }
+      ],
+      "id": "Usage",
+      "kind": "object",
+      "module": "TypeSafeSDK.Generated.Schemas.Usage",
+      "source_refs": [
+        {
+          "kind": "openapi_component",
+          "name": "Usage"
+        }
+      ],
+      "type_name": "t"
+    }
+  ]
+}
