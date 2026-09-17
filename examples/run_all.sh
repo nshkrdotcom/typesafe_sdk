@@ -8,6 +8,7 @@ mix run examples/live_semantic.exs
 mix run examples/live_batching.exs
 mix run examples/live_observability.exs
 mix run examples/live_decision_patterns.exs
+mix run examples/live_recursive_decisions.exs
 mix run examples/evaluation/run.exs -- --split development --sweep \
   --max-auto-error 0.05 --output tmp/examples/development.json
 mix run examples/evaluation/run.exs -- --split held-out \

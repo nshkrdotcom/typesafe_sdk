@@ -73,3 +73,11 @@ Prepared composition/fingerprints, opt-in strict response contracts, local
 serialized-request byte budgets, pure model catalog helpers, and stable bounded
 metadata. None of these additions creates a TypeSafe HTTP stack, retry engine,
 transport cancellation implementation, global queue, or circuit breaker.
+## 0.4.0 OTP/observability additions
+
+0.4.0 does not change the two-operation wire/parity surface or generated OpenAPI
+contracts. `Response.values/1` is a projection of existing enriched answer
+structs; per-answer telemetry is emitted only after the existing semantic
+validation path; and `TypeSafeSDK.OTP.Server` calls the same `Evaluation.run/4`
+path under a caller-owned TaskSupervisor. The OTP facade adds no transport,
+retry, serialization, auth, generated model, or provider operation of its own.

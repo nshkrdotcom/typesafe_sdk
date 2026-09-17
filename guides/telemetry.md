@@ -25,6 +25,40 @@ contracts; this guarantee describes the SDK's semantic events, not every library
 in the application. Caller-supplied metadata can still leak data: put IDs there,
 not customer text or secrets.
 
+
+## Per-answer calibration events
+
+After a successful semantic response passes request-relative validation, 0.4.0
+emits one `[:typesafe_sdk, :answer]` event per known answer in Prepared order.
+These events are designed for aggregate monitoring without turning telemetry into
+a content log.
+
+Measurements:
+
+- `confidence` — provider confidence for Choice/Score, derived `max(p, 1-p)` for Noul;
+- `top_probability` — the largest probability mass without revealing which label won;
+- `distribution_margin` — gap between the top two masses (for Noul, `abs(2p - 1)`).
+
+Metadata contains only `answer_type`, zero-based `question_index`, bounded model
+and request IDs, the Prepared fingerprint, and the explicitly supplied `:caller`
+metadata. It does **not** include question IDs/text, state, selected labels, Score
+values, Noul direction, raw answer bodies, headers, credentials, or OTP request
+tags.
+
+```elixir
+:telemetry.attach(
+  "typesafe-answer-metrics",
+  [:typesafe_sdk, :answer],
+  &MyApp.TypeSafeMetrics.handle/4,
+  nil
+)
+```
+
+If application analysis needs labels or ground truth, join these structural
+measurements against an application-owned evaluation record using an identifier
+you deliberately place in `telemetry_metadata`; do not put customer content into
+that metadata.
+
 The batch owner emits `[:typesafe_sdk, :batch, :cancelled]` for observed task
 timeouts/exits with input index and classification, never raw exit reasons.
 A process killed without executing cleanup cannot emit a guaranteed terminal

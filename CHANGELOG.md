@@ -1,5 +1,41 @@
 # Changelog
 
+## 0.4.0 - 2026-09-17
+
+### Added
+
+- `TypeSafeSDK.Response.values/1`, a narrow primary-value projection that preserves
+  caller keys without introducing a second response hierarchy.
+- Privacy-safe `[:typesafe_sdk, :answer]` telemetry after semantic validation, with
+  confidence/distribution-shape measurements, question ordinal, model/request IDs
+  and Prepared fingerprint but no state, question IDs/text, selected labels, raw
+  bodies, credentials, Noul direction or Score values.
+- `TypeSafeSDK.OTP.Server`, an opt-in bounded GenServer facade for non-blocking
+  semantic work using a caller-owned `Task.Supervisor`, per-server `max_in_flight`,
+  typed SDK results and Pristine cancellation. No global SDK process was added.
+- Recursive-decision documentation and a live two-level descent example covering
+  hierarchical descent, bisection, verify/repair, coarse-to-fine cascades and
+  bounded clarifying loops.
+- Reach architecture boundaries plus CI/handoff gates preventing handwritten pure
+  semantic modules from reaching runtime/orchestration layers and runtime
+  integration from reaching upward into orchestration.
+- 0.4 migration, OTP integration and implementation-record documentation; Jev is
+  credited in README for the OTP/recursive/telemetry/architecture inspiration.
+
+### Changed
+
+- Bumped package/runtime/header/docs/schema release metadata to 0.4.0 while keeping
+  the generated OpenAPI operations and existing Pristine runtime boundary intact.
+- `mix ci`, GitHub quality CI and `scripts/check_handoff.sh` now include
+  `mix reach.check --arch --smells`.
+
+### Verification status
+
+- Static reconstruction, source inspection, overlay-diff checks and archive checks
+  were performed in the delivery environment. Elixir/Erlang/Mix are unavailable
+  there, so formatting, compilation, ExUnit, Reach, Credo, Dialyzer, ExDoc, schema
+  verification, generated-artifact verification, live API checks and Hex build are
+  explicit target-host gates in `HANDOFF.md`.
 ## 0.3.0 - 2026-09-17
 
 ### Added

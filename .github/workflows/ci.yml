@@ -66,6 +66,7 @@ jobs:
       - run: mix format --check-formatted
       - run: mix compile --warnings-as-errors
       - run: mix credo --strict
+      - run: mix reach.check --arch --smells
       - run: mix dialyzer
       - run: mix docs --warnings-as-errors
       - run: mix typesafe.schema.verify

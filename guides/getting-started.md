@@ -1,8 +1,8 @@
-# Getting Started with 0.3.0
+# Getting Started with 0.4.0
 
 ## Install and configure
 
-Add `{:typesafe_sdk, "~> 0.3.0"}` to your application's dependencies once this
+Add `{:typesafe_sdk, "~> 0.4.0"}` to your application's dependencies once this
 release is published. For a local checkout before publication, use
 `{:typesafe_sdk, path: "../typesafe_sdk"}`. Pristine `~> 0.4.0` is the runtime dependency and owns HTTP execution, retries, and verified unary cancellation.
 

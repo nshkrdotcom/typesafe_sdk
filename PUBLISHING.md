@@ -1,136 +1,60 @@
-# Publish TypeSafeSDK 0.3.0
+# Publish TypeSafeSDK 0.4.0
 
-The source delivery and environment limitations are recorded in [HANDOFF.md](HANDOFF.md)
-and [VERIFICATION.md](VERIFICATION.md). Do not publish until the real BEAM gates below
-pass for the exact commit being released.
+Do not publish until `HANDOFF.md` target-host gates are green and the intended
+final Pristine source/version has been verified. The `pristine_sdk.xml` supplied
+during the static implementation session was identical to the TypeSafeSDK
+baseline and cannot establish that dependency contract.
 
-## 1. Release train and tooling
-
-Publish in dependency order, from the package directories (not poncho roots):
-
-| Package | Directory | Version | Tag |
-| --- | --- | --- | --- |
-| Execution Plane HTTP | `../execution_plane/protocols/execution_plane_http` | 0.2.0 | `execution_plane_http-v0.2.0` |
-| Pristine runtime | `../pristine/apps/pristine_runtime` | 0.4.0 | `pristine-v0.4.0` |
-| TypeSafeSDK | `.` | 0.3.0 | `v0.3.0` |
-
-Execution Plane core remains at published 0.3.0. Pristine Codegen and Testkit
-retain their versions; neither needs publishing for this train. The sibling
-release handoffs establish the package-prefixed tag convention above.
-
-Execution Plane HTTP 0.2.0 and Pristine 0.4.0 are now published with docs and
-pushed tags. TypeSafe's `mix.lock` contains both real Hex releases. **TypeSafe
-0.3.0 remains unpublished and untagged at the maintainer's request.**
-
-Use `.tool-versions`: Elixir 1.19.5 / OTP 28.3.1. Runtime dependencies now resolve
-from Hex. Source-checkout maintenance tooling still uses the tools-only bootstrap
-created by `.github/actions/setup/action.yml` (locally `/tmp/typesafe-tools.exs`,
-with its `.tooling/pristine` checkout):
-
-```bash
-export MIX_WORKSPACE_OPS_BOOTSTRAP=/tmp/typesafe-tools.exs
-mix deps.get
-bash scripts/check_handoff.sh
-mix ci
-```
-
-Do not use the earlier sibling-runtime bootstrap for final publication checks.
-Normal push/PR CI uses published runtime packages. Manual `pristine_ref` and
-`execution_plane_ref` inputs remain available for future source testing; leave
-them empty for release verification. No further dependency publication is needed.
-
-## 2. Offline tests and release QC
-
-After resolving the published dependencies, run the aggregate gate:
+## Preflight
 
 ```bash
 mix deps.get
-mix ci
-```
-
-Then run the explicit package/release checks used by the handoff so failures are
-visible individually:
-
-```bash
 mix typesafe.prereq
 mix format --check-formatted
 mix compile --warnings-as-errors
-mix test
+mix test --warnings-as-errors
+mix reach.check --arch --smells
 mix credo --strict
 mix dialyzer
 mix docs --warnings-as-errors
 mix typesafe.schema.verify
 mix typesafe.verify --project-root .
 mix hex.build --unpack
+mix ci
 ```
 
-`mix typesafe.prereq` now verifies the Pristine 0.4 cancellation/runtime
-contract in addition to the provider retry-status contract. Do not regenerate
-artifacts merely to hide drift; investigate freshness failures first.
+Run live tests only under the project's explicit release policy and with a real
+credential. Do not substitute fixture results for live evidence.
 
-The 0.3 suite must specifically prove Prepared composition/fingerprints, strict
-response-contract defaults/failures, request-byte no-egress behavior, retry
-inheritance, exact cancellation-token forwarding, fail-closed capability
-delegation, batch cancellation cleanup/scheduling, pure model helpers, and
-privacy-safe response/error metadata.
+## Inspect the package
 
-## 3. Live acceptance
+Confirm the unpacked 0.4.0 package contains runtime source, `priv/upstream`,
+committed JSON Schemas, guides, examples, README, CHANGELOG, LICENSE and the 0.4
+implementation record. Confirm generated OpenAPI operation ownership and the
+Pristine runtime dependency remain as intended.
 
-Set credentials without committing them or placing them in shell history:
+Check that runtime code does not depend on Reach, ExDoc, Credo, Dialyzer,
+Pristine Codegen or provider testkit. Those are development/test tooling.
+
+## Dry run
 
 ```bash
-read -rsp "TypeSafe API key: " TYPESAFE_API_KEY
-echo
-export TYPESAFE_API_KEY
-mix test --include live --warnings-as-errors
-bash examples/run_all.sh
-mix typesafe.record --output tmp/live --baseline test/fixtures/live
+mix hex.publish --dry-run --yes
 ```
 
-Calls may incur charges. Review outputs before retaining any capture. A live
-success cannot by itself prove remote non-execution after cancellation; the
-verified Pristine capability establishes local physical cancellation/cleanup,
-not rollback of remote side effects.
+Review package name/version, dependency requirements, files, docs metadata and
+licenses. Resolve warnings instead of suppressing them without review.
 
-## 4. Package and final CI
+## Publish and tag
 
-```bash
-mix hex.build --unpack
-mix hex.publish --dry-run
-gh run list --workflow ci.yml --limit 3
-# Use the run ID for the exact commit you intend to publish:
-gh run watch <RUN_ID> --exit-status
-```
-
-Inspect `typesafe_sdk-0.3.0/`: runtime source, schemas, upstream source, guides,
-cheatsheet, examples, assets, and implementation records must be present;
-secrets, local reports, `_build/`, `deps/`, and maintenance-only checkout code
-must not leak into the package. Repeat the clean-consumer package check because
-0.3.0 changes the runtime prerequisite to Pristine 0.4.0.
-
-## 5. Publish and tag
-
-After every required gate is green, authenticate and publish:
+Only after the dry run and all release gates are green:
 
 ```bash
-mix hex.user auth
 mix hex.publish
+# verify Hex package/docs, then:
+git tag -a v0.4.0 -m "TypeSafeSDK 0.4.0"
+git push origin v0.4.0
 ```
 
-Inspect the package name, version **0.3.0**, files, and dependency requirements
-before confirming. After successful publication, tag that exact commit:
-
-```bash
-git tag -a v0.3.0 -m "TypeSafeSDK 0.3.0"
-git push origin v0.3.0
-```
-
-Do not overwrite an existing release tag. Verify the 0.3.0 package and docs on
-Hex/HexDocs. If only the documentation upload fails after the package succeeds,
-retry `mix hex.publish docs` rather than replacing the package.
-
-Release date: **2026-09-17**. Preserve historical changelog entries, MIT
-licensing, acknowledgements, source provenance, and the opt-in live-CI policy.
-TypeSafe publication and its tag remain paused for the maintainer. Actual
-source/package QC and Hex-resolved release checks are recorded in
-`VERIFICATION.md`. Do not rerun the already completed dependency publications.
+Never overwrite an existing release tag or claim publication before the registry
+and documentation are actually visible.

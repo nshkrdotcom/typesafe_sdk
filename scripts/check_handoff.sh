@@ -8,6 +8,7 @@ mix format --check-formatted
 mix compile --warnings-as-errors
 mix test --warnings-as-errors
 mix credo --strict
+mix reach.check --arch --smells
 mix dialyzer
 mix docs --warnings-as-errors
 mix typesafe.schema.verify

@@ -3,7 +3,7 @@ if bootstrap = System.get_env("MIX_WORKSPACE_OPS_BOOTSTRAP"), do: Code.require_f
 defmodule TypeSafeSDK.MixProject do
   use Mix.Project
 
-  @version "0.3.0"
+  @version "0.4.0"
   @source_url "https://github.com/nshkrdotcom/typesafe_sdk"
 
   def project do
@@ -40,7 +40,8 @@ defmodule TypeSafeSDK.MixProject do
       workspace_tooling_deps(),
       {:ex_doc, "~> 0.40.4", only: :dev, runtime: false},
       {:dialyxir, "~> 1.4.8", only: [:dev, :test], runtime: false},
-      {:credo, "~> 1.7.19", only: [:dev, :test], runtime: false}
+      {:credo, "~> 1.7.19", only: [:dev, :test], runtime: false},
+      {:reach, "~> 2.8", only: [:dev, :test], runtime: false}
     ]
     |> List.flatten()
   end
@@ -108,11 +109,14 @@ defmodule TypeSafeSDK.MixProject do
         "guides/runtime-capabilities.md",
         "guides/runtime-controls.md",
         "guides/json-schemas.md",
+        "guides/migration-0.4.md",
         "guides/migration-0.3.md",
         "guides/migration-0.2.md",
         "guides/confidence-routing.md",
         "guides/composite-scoring.md",
         "guides/speculative-fan-out.md",
+        "guides/recursive-decisions.md",
+        "guides/otp-server.md",
         "guides/evaluating-decisions.md",
         {"examples/evaluation/README.md",
          title: "Decision Evaluation Workflow", filename: "decision-evaluation"},
@@ -133,6 +137,7 @@ defmodule TypeSafeSDK.MixProject do
           "guides/answers-and-confidence.md",
           "guides/batching.md",
           "guides/testing.md",
+          "guides/migration-0.4.md",
           "guides/migration-0.3.md",
           "guides/migration-0.2.md"
         ],
@@ -146,6 +151,8 @@ defmodule TypeSafeSDK.MixProject do
           "guides/confidence-routing.md",
           "guides/composite-scoring.md",
           "guides/speculative-fan-out.md",
+          "guides/recursive-decisions.md",
+          "guides/otp-server.md",
           "guides/evaluating-decisions.md"
         ],
         Examples: [
@@ -173,7 +180,8 @@ defmodule TypeSafeSDK.MixProject do
         "Batch and Observability": [
           TypeSafeSDK.Batch,
           TypeSafeSDK.Telemetry,
-          TypeSafeSDK.RuntimeCapabilities
+          TypeSafeSDK.RuntimeCapabilities,
+          TypeSafeSDK.OTP.Server
         ],
         "Testing and Contracts": [
           TypeSafeSDK.Test,
@@ -222,6 +230,7 @@ defmodule TypeSafeSDK.MixProject do
         "compile --warnings-as-errors",
         "cmd env MIX_ENV=test mix test --warnings-as-errors",
         "credo --strict",
+        "reach.check --arch --smells",
         "dialyzer",
         "docs --warnings-as-errors",
         "typesafe.schema.verify",

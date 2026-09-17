@@ -1,4 +1,4 @@
-# TypeSafeSDK 0.3.0
+# TypeSafeSDK 0.4.0
 
 ## Client and questions
 {: .col-2}
@@ -40,6 +40,8 @@ TypeSafeSDK.Answer.yes?(response.answers.urgent, 0.85)
 TypeSafeSDK.Answer.Score.expected_level(response.answers.severity)
 TypeSafeSDK.Answer.Score.max_level(response.answers.severity)
 TypeSafeSDK.Answer.Score.normalized(response.answers.severity)
+TypeSafeSDK.Response.values(response)
+# %{urgent: 0.91, team: :billing, severity: 1.7}
 ```
 
 Thresholds are explicit application policy, not safety guarantees. Expected and
@@ -73,6 +75,7 @@ mix typesafe.schema.export
 mix typesafe.schema.verify
 mix typesafe.capabilities
 mix typesafe.record --output tmp/live
+mix reach.check --arch --smells
 ```
 
 Recording needs a real API key; no live data is fabricated. Unadvertised transport
@@ -98,3 +101,25 @@ TypeSafeSDK.RuntimeCapabilities.report(client)
 Per-call retry keys inherit omitted client retry fields; `retry: false` disables
 retry for that call. Cancellation uses Pristine directly and cannot prove that a
 remote service did not begin processing a request.
+
+## 0.4 OTP and answer telemetry
+{: .col-2}
+
+```elixir
+# Successful evaluate/4 calls emit one event per known answer:
+[:typesafe_sdk, :answer]
+# measurements: confidence, top_probability, distribution_margin
+# metadata: answer_type, question_index, model/request ID, Prepared fingerprint
+
+children = [
+  {Task.Supervisor, name: MyApp.TypeSafeTasks},
+  {MyApp.Triage,
+   client: client,
+   task_supervisor: MyApp.TypeSafeTasks,
+   max_in_flight: 32}
+]
+```
+
+`MyApp.Triage` uses `TypeSafeSDK.OTP.Server` and returns `{:evaluate, ...}` from
+callbacks. The SDK starts no global task supervisor. See `guides/otp-server.md`
+and `guides/recursive-decisions.md`.

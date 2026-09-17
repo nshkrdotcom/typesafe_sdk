@@ -58,11 +58,18 @@ defmodule TypeSafeSDK.Evaluation do
     with {:ok, state} <- JSON.normalize(state, ["state"]),
          {:ok, extra} <- extra_body(Keyword.get(opts, :extra_body)),
          {:ok, response} <- execute(client, state, prepared, extra, opts) do
-      SemanticResponse.enrich(
-        response,
-        prepared,
-        Keyword.get(opts, :probability_tolerance, 0.02)
-      )
+      case SemanticResponse.enrich(
+             response,
+             prepared,
+             Keyword.get(opts, :probability_tolerance, 0.02)
+           ) do
+        {:ok, enriched} = result ->
+          :ok = Telemetry.answers(enriched, prepared, Keyword.get(opts, :telemetry_metadata, %{}))
+          result
+
+        error ->
+          error
+      end
     end
   end
 

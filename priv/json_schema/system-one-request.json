@@ -767,5 +767,5 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "SystemOneRequest",
   "x-source": "priv/upstream/openapi.json",
-  "x-typesafe-sdk-version": "0.3.0"
+  "x-typesafe-sdk-version": "0.4.0"
 }

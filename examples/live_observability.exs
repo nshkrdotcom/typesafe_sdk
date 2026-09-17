@@ -12,7 +12,9 @@ end
 
 client = Live.client()
 id = {TypeSafeSDK.Examples.LiveTelemetry, make_ref()}
-events = Enum.map([:start, :stop, :exception], &[:typesafe_sdk, :evaluate, &1])
+events =
+  Enum.map([:start, :stop, :exception], &[:typesafe_sdk, :evaluate, &1]) ++
+    [[:typesafe_sdk, :answer]]
 :ok = :telemetry.attach_many(id, events, &TypeSafeSDK.Examples.LiveTelemetry.handle/4, self())
 
 try do
@@ -27,9 +29,13 @@ try do
 
   Live.show("Live response", Live.summary(response))
 
-  for expected <- [:start, :stop] do
+  for expected <- [
+        [:typesafe_sdk, :evaluate, :start],
+        [:typesafe_sdk, :answer],
+        [:typesafe_sdk, :evaluate, :stop]
+      ] do
     receive do
-      {:semantic_event, [:typesafe_sdk, :evaluate, ^expected] = event, measurements, metadata} ->
+      {:semantic_event, ^expected = event, measurements, metadata} ->
         duration_ms =
           case measurements[:duration] do
             nil -> nil
@@ -43,7 +49,7 @@ try do
           metadata: metadata
         })
     after
-      1_000 -> raise "Missing semantic #{expected} event"
+      1_000 -> raise "Missing semantic #{inspect(expected)} event"
     end
   end
 after

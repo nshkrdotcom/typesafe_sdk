@@ -62,32 +62,44 @@ For intentional upstream/codegen changes, run in this order after generation
 7. `mix test`
 8. `mix test --include live` with `TYPESAFE_API_KEY` when release policy requires it
 9. `mix credo --strict`
-10. `mix dialyzer`
-11. `mix docs --warnings-as-errors`
-12. `mix typesafe.schema.verify`
-13. `mix typesafe.verify --project-root .`
-14. `mix hex.build --unpack`
-15. `mix ci` as the final aggregate gate
+10. `mix reach.check --arch --smells`
+11. `mix dialyzer`
+12. `mix docs --warnings-as-errors`
+13. `mix typesafe.schema.verify`
+14. `mix typesafe.verify --project-root .`
+15. `mix hex.build --unpack`
+16. `mix ci` as the final aggregate gate
 
 Do not call the handoff complete while any applicable gate is red.
 
-## 0.3.0 semantic layer and release discipline
+## 0.4.0 semantic/OTP layer and release discipline
 
-- Read `docs/implementation/0.3.0/README.md`, the retained 0.2 implementation record, and `HANDOFF.md` before changing the semantic surface. Keep public response/answer structs additive; helper namespaces
-  are not a second Result hierarchy.
+- Read `docs/implementation/0.4.0/README.md`, the retained 0.3/0.2 records, and
+  `HANDOFF.md` before changing the semantic surface. Keep public response/answer
+  structs additive; `Response.values/1` is a projection, not another result model.
 - Legacy constructors/system_one remain parity APIs. Strict Question.* / evaluate
   own semantic counts, protected extras, caller identity and relational validation.
-- Never use String.to_atom on untrusted data. Ordered JSON and cached fragments
+- Never use `String.to_atom/1` on untrusted data. Ordered JSON and cached fragments
   must be built only from validated question definitions.
 - Application fixtures must exercise the real Pristine serialization/retry/decode
   path. Do not use fixtures as evidence that a live API or transport bound works.
 - Keep batch lifecycle isolated per enumeration; test timeout, early halt, caller
   death, unordered identity, and creators that trap exits.
-- Semantic telemetry never emits state/questions/bodies/headers/raw errors or
-  stacktraces. Caller metadata stays nested and explicitly caller-controlled.
+- `TypeSafeSDK.OTP.Server` must remain opt-in: no package-global TaskSupervisor or
+  second application runtime. Require a caller-owned TaskSupervisor and preserve
+  explicit per-server `max_in_flight` bounds.
+- OTP tags are opaque application state and must not enter automatic telemetry.
+  OTP.Server scopes requests with private cancellation tokens; caller cancellation
+  may be mirrored inward, but caller-owned tokens must never be mutated implicitly.
+- Semantic telemetry never emits state/questions/bodies/headers/raw errors, answer
+  labels/values, opaque tags, or stacktraces. Caller metadata stays nested and
+  explicitly caller-controlled.
+- Keep `.reach.exs` green. Do not weaken an architectural rule merely to hide a
+  dependency inversion; generated modules/data structs are intentionally outside
+  the small handwritten layer model.
 - Run schema verification in addition to codegen verification. Do not regenerate
   before a freshness gate just to hide pre-existing drift. Only intentional source
   edits justify regeneration; review generated diffs.
-- Release is 0.3.0, dated 2026-09-17. Historical/dependency/upstream versions are
-  not placeholders to globally replace. Do not assert publication or successful
+- Release target is 0.4.0, dated 2026-09-17. Historical/dependency/upstream versions
+  are not placeholders to globally replace. Do not assert publication or successful
   BEAM gates until they have actually run.

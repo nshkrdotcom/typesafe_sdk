@@ -584,14 +584,14 @@ Descriptions and instructions can also contain JSON-compatible objects or arrays
 
 # Installation
 
-Requires Elixir `~> 1.18`. The repository and CI pin Erlang/OTP 28.3.1 and Elixir 1.19.5-otp-28 in `.tool-versions`; no broader OTP test matrix is declared. The 0.3.0 release preserves the two generated API operations and layers semantic evaluation/batching on top; it does not add a provider streaming API.
+Requires Elixir `~> 1.18`. The repository and CI pin Erlang/OTP 28.3.1 and Elixir 1.19.5-otp-28 in `.tool-versions`; no broader OTP test matrix is declared. The 0.4.0 release preserves the two generated API operations and layers semantic evaluation, bounded OTP integration, and richer observability on top; it does not add a provider streaming API.
 
 Add the dependency to your application's `mix.exs`:
 
 ```elixir
 def deps do
   [
-    {:typesafe_sdk, "~> 0.3.0"}
+    {:typesafe_sdk, "~> 0.4.0"}
   ]
 end
 ```
@@ -602,7 +602,7 @@ Then:
 mix deps.get
 ```
 
-This source tree targets TypeSafeSDK 0.3.0. The Hex dependency above selects this release. Pristine `~> 0.4.0` is required; do not downgrade it to the 0.3 runtime line. Source-checkout maintenance tools need the contributor setup below. See `HANDOFF.md` for the verification and release status of this change set.
+This source tree targets TypeSafeSDK 0.4.0. The Hex dependency above selects this release. Pristine `~> 0.4.0` is required; do not downgrade it to the 0.3 runtime line. Source-checkout maintenance tools need the contributor setup below. See `HANDOFF.md` for the verification and release status of this change set.
 
 Get an API key from the [TypeSafe dashboard](https://console.typesafe.ai), following the [official quick start](https://docs.typesafe.ai/introduction/quickstart). Set `TYPESAFE_API_KEY` in your environment, then configure it in your host application's `config/runtime.exs`:
 
@@ -616,6 +616,38 @@ config :typesafe_sdk,
 Runtime library modules do not read operating-system environment variables themselves. Configuration enters through application config or explicit client options.
 
 The default transport is `Pristine.Adapters.Transport.Finch`, with `transport_opts: []`. With Pristine 0.4.0, normal application startup is sufficient: a host does not need its own Finch pool or custom transport options. TypeSafe relies on the Pristine 0.4 transport contract for this behavior; run the real-environment gates in `HANDOFF.md` before release.
+
+---
+
+# 0.4.0 OTP composition, answer telemetry, and recursive decisions
+
+0.4.0 is additive: the generated API and Pristine runtime boundary remain unchanged.
+It adds a narrow primary-value projection, one privacy-safe telemetry event per
+validated answer, executable architecture boundaries, and an opt-in bounded OTP
+server facade.
+
+```elixir
+{:ok, response} = TypeSafeSDK.evaluate(client, state, prepared)
+
+TypeSafeSDK.Response.values(response)
+# => %{urgent: 0.91, team: :billing, severity: 1.7}
+```
+
+`[:typesafe_sdk, :answer]` events carry only confidence/distribution shape and
+structural correlation (`answer_type`, question ordinal, model/request ID, and
+Prepared fingerprint). They do not include state, question text/IDs, selected
+labels, Noul direction, Score values, bodies, headers, credentials, or opaque OTP
+tags.
+
+For process-oriented applications, `TypeSafeSDK.OTP.Server` lets ordinary
+GenServer callbacks start semantic work without blocking the server. The host
+application supplies the `Task.Supervisor`; `max_in_flight` bounds pending work;
+Pristine still owns HTTP/retry/cancellation execution. No global SDK process is
+started.
+
+See [the 0.4 migration guide](guides/migration-0.4.md),
+[bounded OTP integration](guides/otp-server.md), and
+[recursive decision patterns](guides/recursive-decisions.md).
 
 ---
 
@@ -1431,7 +1463,7 @@ System One allows applications to express these questions as typed function call
 
 # Documentation
 
-The [0.3.0 cheatsheet](cheatsheets/typesafe_sdk.cheatmd) covers strict constructors,
+The [0.4.0 cheatsheet](cheatsheets/typesafe_sdk.cheatmd) covers strict constructors,
 prepared evaluation, uncertainty helpers, batches, tests and contract tools. The
 [labeled evaluation workflow](examples/evaluation/README.md) includes development
 and held-out datasets, policy freezing, coverage/error metrics and latency/token reporting.
@@ -1447,13 +1479,15 @@ and held-out datasets, policy freezing, coverage/error metrics and latency/token
 
 # Acknowledgements
 
-TypeSafeSDK is an independent Elixir SDK, but its 0.2.0 design benefited from studying three other early community implementations of the TypeSafe API:
+TypeSafeSDK is an independent Elixir SDK, but its design has benefited from studying several early community implementations of the TypeSafe API:
 
 * [mattneel/typesafe](https://github.com/mattneel/typesafe) — particularly influential around Elixir-facing response ergonomics: ranked Choice results and margins, expected versus modal Score interpretation, response lookup helpers, structured validation errors, schema export, telemetry metadata, and contract-oriented test fixtures.
 
 * [hfiguera/typesafe_ai](https://github.com/hfiguera/typesafe_ai) — particularly influential around production discipline: validating responses against the questions actually sent, treating retry/replay ambiguity explicitly, keeping telemetry privacy-safe, thinking carefully about bounded runtime behavior, and separating model evaluation from downstream application-policy evaluation.
 
 * [typesend/typesafe_ai](https://github.com/typesend/typesafe_ai) — particularly influential around the higher-level semantic programming model: ergonomic question construction, preservation of caller-supplied key identity, enriched Score semantics, prepared question sets, concurrent evaluation, application testing helpers, and uncertainty-aware decision patterns.
+
+* [dannote/jev](https://github.com/dannote/jev) — particularly influential on the 0.4.0 OTP-facing work: treating semantic decisions as supervised asynchronous process work, correlating in-flight requests with opaque tags, recursive decision workflows, per-answer telemetry, and executable architecture-boundary checks. TypeSafeSDK adapts those ideas to its existing bounded concurrency, typed response, privacy, and Pristine-runtime contracts rather than copying Jev's transport or global supervisor design.
 
 These projects approached the same newly emerging API from different directions, and the overlap between them was useful signal: an Elixir SDK should do more than reproduce the HTTP wire format. It should make typed probabilistic decisions natural to construct, inspect, validate, test, compose, and evaluate in ordinary Elixir programs.
 

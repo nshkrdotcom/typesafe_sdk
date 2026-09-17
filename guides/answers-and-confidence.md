@@ -13,11 +13,13 @@ team = TypeSafeSDK.Response.fetch!(response, :team)
 TypeSafeSDK.Response.choices(response)
 TypeSafeSDK.Response.nouls(response)
 TypeSafeSDK.Response.scores(response)
+TypeSafeSDK.Response.values(response)
+# => %{urgent: 0.91, team: :billing, severity: 1.7}
 ```
 
 Fetch uses exact keys, not atom/string coercion. `fetch!` lists available IDs in
 its KeyError. Raw/parity responses use strings; semantic responses preserve the
-caller key type. Every typed answer retains its own raw payload and ID.
+caller key type. Every typed answer retains its own raw payload and ID. `Response.values/1` is a narrow convenience projection of the primary Noul/Choice/Score value; it omits unknown future answer types and does not replace the enriched answer structs.
 
 ## Relational validation
 

@@ -1,4 +1,4 @@
-# Live examples for TypeSafeSDK 0.3.0
+# Live examples for TypeSafeSDK 0.4.0
 
 Every runnable example calls the real TypeSafe endpoint at
 `https://api.typesafe.ai`. There is no offline mode, fixture transport, synthetic
@@ -18,8 +18,8 @@ export TYPESAFE_API_KEY
 bash examples/run_all.sh
 ```
 
-The runner stops on failure. It runs the five standalone scripts below, then
-12 development and eight held-out evaluations. Expect approximately 35–36
+The runner stops on failure. It runs the six standalone scripts below, then
+12 development and eight held-out evaluations. Expect approximately 37–38
 requests, including model lists and work prefetched before early halt; this is
 not a billing guarantee. Automatic retries are disabled for these examples.
 Missing credentials, failed requests and unmet evaluation-policy criteria return
@@ -43,6 +43,7 @@ answers and synthetic inputs; use care if substituting private data.
 | `mix run examples/live_batching.exs` | `evaluate_many`; lazy `evaluate_stream`; bounded concurrency and ordered windows; unordered `batch_index`; collect/raise policies; task/attempt budgets; early halt |
 | `mix run examples/live_observability.exs` | Live `evaluate!`; named telemetry handler attach/detach; nested caller metadata; native duration conversion; extra headers; response metadata; real-adapter capability report and fail-closed check; schema freshness |
 | `mix run examples/live_decision_patterns.exs` | Weighted normalized Score composition; explicit Noul threshold and confidence gate; supervised speculative live model lookup and cleanup |
+| `mix run examples/live_recursive_decisions.exs` | Two-level hierarchical decision descent using caller-key restoration and the primary-value projection; explicit reminder that production recursion needs bounds |
 | `mix run examples/evaluation/run.exs -- ...` | Labeled development/held-out workflow, model versus policy metrics, threshold sweep, frozen model/policy, coverage/error/latency/token reporting |
 
 `support/live.exs` and `evaluation/evaluation.exs` are supporting modules, not
@@ -105,4 +106,4 @@ publishes a package or claims that synthetic evaluation data proves production
 accuracy. All example sources and datasets are included in the Hex package.
 
 
-0.3.0 runtime-control examples are documented in `guides/runtime-controls.md`; live examples remain opt-in and may incur API charges.
+0.4.0 adds per-answer telemetry and bounded OTP integration; runtime-control examples are documented in `guides/runtime-controls.md`; live examples remain opt-in and may incur API charges.

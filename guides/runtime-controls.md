@@ -1,8 +1,9 @@
 # Runtime controls and semantic contracts
 
-TypeSafe SDK 0.3.0 adds caller-facing controls while keeping Pristine as the
-single HTTP/resilience runtime. The authoritative migration examples and
-compatibility notes are in [Migrating from 0.2.x to 0.3.0](migration-0.3.md).
+TypeSafe SDK 0.3.0 introduced these caller-facing controls while keeping Pristine as the
+single HTTP/resilience runtime. TypeSafeSDK 0.4.0 preserves that ownership boundary
+and adds optional OTP composition above it. See [Migrating from 0.3.x to 0.4.0](migration-0.4.md)
+and the retained [0.3 migration guide](migration-0.3.md).
 
 ## Ownership boundary
 

@@ -54,6 +54,7 @@ defmodule TypeSafeSDK.SemanticResponseTest do
     assert Map.keys(Response.choices(response)) == [:team]
     assert Map.keys(Response.nouls(response)) == [:urgent]
     assert Map.keys(Response.scores(response)) == [:level]
+    assert Response.values(response) == %{urgent: 0.9, team: :billing, level: 0.7}
   end
 
   test "malformed known relational contracts fail with specific paths" do
