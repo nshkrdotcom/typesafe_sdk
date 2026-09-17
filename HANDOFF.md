@@ -2,6 +2,10 @@
 
 Release target: **0.3.0**
 
+Target-host QC was executed on 2026-09-17 after this source-overlay handoff.
+See the closure record appended below and `VERIFICATION.md`; the original
+container limitations below are historical.
+
 Release date: **2026-09-17**
 
 Baseline: supplied TypeSafeSDK 0.2.0 Repomix source
@@ -252,3 +256,29 @@ Suggested conventional commit subject:
 ```text
 feat: release TypeSafe SDK 0.3.0 runtime controls and semantic contracts
 ```
+
+
+## Target-host closure — 2026-09-17
+
+The implementation was compiled and QC'd on Elixir 1.19.5 / OTP 28.3.1.
+Executable checks required a qualified test-transport `send/2`, Pristine opaque
+token validation, three fixture option corrections, formatting/Credo/ExDoc fixes,
+and an explicit test environment in `mix ci`. No generated files were changed.
+
+All local BEAM gates listed above passed, including the unchanged fingerprint
+golden vector, schema/codegen freshness, unpacked package inspection and final
+`mix ci`. Offline: 1 doctest + 121 tests, zero failures (2 excluded). With live
+acceptance: 1 doctest + 123 tests, zero failures. All examples and first-capture
+recording passed; captures were not promoted to approved fixtures.
+
+The configured three-version test/freshness matrix passed with explicit sibling
+source commits. A clean consumer of the unpacked release artifacts passed live
+model listing, semantic evaluation, fingerprint metadata and cancellation.
+Pristine root QC and HTTP package QC were rechecked; neither needed source edits.
+See `VERIFICATION.md` for exact commands, counts, commits and evidence boundaries.
+
+The release train is HTTP 0.2.0 (`execution_plane_http-v0.2.0`), Pristine 0.4.0
+(`pristine-v0.4.0`), then TypeSafe 0.3.0 (`v0.3.0`). Execution-plane core remains
+published 0.3.0. Fully Hex-resolved CI, real lock entries and the publish dry run
+follow dependency publication; the source checks do not substitute for those
+publish-train steps. No publication or tags were performed.

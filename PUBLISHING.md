@@ -4,24 +4,51 @@ The source delivery and environment limitations are recorded in [HANDOFF.md](HAN
 and [VERIFICATION.md](VERIFICATION.md). Do not publish until the real BEAM gates below
 pass for the exact commit being released.
 
-## 1. Checkout and tooling
+## 1. Release train and tooling
+
+Publish in dependency order, from the package directories (not poncho roots):
+
+| Package | Directory | Version | Tag |
+| --- | --- | --- | --- |
+| Execution Plane HTTP | `../execution_plane/protocols/execution_plane_http` | 0.2.0 | `execution_plane_http-v0.2.0` |
+| Pristine runtime | `../pristine/apps/pristine_runtime` | 0.4.0 | `pristine-v0.4.0` |
+| TypeSafeSDK | `.` | 0.3.0 | `v0.3.0` |
+
+Execution Plane core remains at published 0.3.0. Pristine Codegen and Testkit
+retain their versions; neither needs publishing for this train. The sibling
+release handoffs establish the package-prefixed tag convention above.
+
+Use `.tool-versions`: Elixir 1.19.5 / OTP 28.3.1. Before the dependencies are
+published, local source QC uses the existing machine-local bootstrap:
 
 ```bash
-cd ~/p/g/n/typesafe_sdk
-git status --short
-mix --version
-export MIX_WORKSPACE_OPS_BOOTSTRAP=/tmp/typesafe-tools.exs
+export MIX_WORKSPACE_OPS_BOOTSTRAP="$HOME/.config/mix_workspace_ops/typesafe_local_bootstrap.exs"
+bash scripts/check_handoff.sh
+mix ci
 ```
 
-Use `.tool-versions`: Elixir 1.19.5 / OTP 28.3.1. Recreate the documented
-maintenance-tool bootstrap when required by the source checkout. Runtime Pristine
-must resolve to `~> 0.4.0`; do not downgrade to the 0.3 runtime line. The
-TypeSafe package remains responsible for semantic behavior while Pristine owns
-HTTP execution, retry, and physical unary cancellation.
+This bootstrap selects sibling sources for QC and ordinary Hex requirements for
+packaging. Never commit machine-local paths. After publishing HTTP 0.2.0, resolve
+and validate Pristine against that Hex release before publishing Pristine 0.4.0.
+Then switch TypeSafe to the maintenance-tools-only bootstrap from
+`.github/actions/setup/action.yml`, run `mix deps.get`, and commit the real Hex
+lock entries. Do not fabricate checksums for unpublished versions.
+
+The hosted matrix can be run before publication with explicit source commits:
+
+```bash
+gh workflow run ci.yml \
+  -f pristine_ref=8fd10288abedea3c0820015cdf796dd1dae0dc78 \
+  -f execution_plane_ref=63b69ff3984f6f8440866e96a16ceee3ad73bf41
+```
+
+Normal push/PR CI and manual runs without these inputs resolve runtime packages
+from Hex. Until the dependencies are published, those runs cannot resolve
+Pristine 0.4.0; source-matrix evidence is recorded separately in `VERIFICATION.md`.
 
 ## 2. Offline tests and release QC
 
-Start with the repository's aggregate gate:
+After resolving the published dependencies, run the aggregate gate:
 
 ```bash
 mix deps.get
@@ -111,5 +138,6 @@ retry `mix hex.publish docs` rather than replacing the package.
 
 Release date: **2026-09-17**. Preserve historical changelog entries, MIT
 licensing, acknowledgements, source provenance, and the opt-in live-CI policy.
-Publication is always a separate maintainer action; this implementation overlay
-does not claim that 0.3.0 has been published or BEAM-verified.
+Publication and tags remain separate maintainer actions. Actual source/package QC
+is recorded in `VERIFICATION.md`; Hex-only resolution and the full publish dry
+run follow dependency publication.
