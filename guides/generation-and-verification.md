@@ -9,6 +9,10 @@ they are not needed to install or use the published SDK. On the development
 workstation, use `~/.local/bin/typesafe-mix` in place of `mix` to select the local
 tooling packages. Normal dependency tuples default to Hex.
 
+CI checks out Pristine at a pinned commit and uses the same bootstrap hook for
+Codegen and Provider Testkit only. The SDK runtime and its dependencies resolve
+from Hex. This lets CI maintain the SDK before the tooling packages are published.
+
 Generated artifacts are committed source, following the sibling SDK convention.
 
 ```bash
