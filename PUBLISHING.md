@@ -1,8 +1,10 @@
 # Publish TypeSafeSDK 0.2.0
 
-This is a release candidate change set until the target-environment gates in
-HANDOFF.md pass. The source version bump does not mean it has been uploaded to
-Hex. Do not claim publication or green BEAM checks from the static delivery audit.
+Native release validation is recorded in [HANDOFF.md](HANDOFF.md) and
+[VERIFICATION.md](VERIFICATION.md), with linked CI runs. The local handoff,
+live tests, evaluation workflow, package build and clean consumer smoke passed.
+Confirm the final commit's CI is green before publishing. No Hex publication
+has been performed by this handoff.
 
 ## Before publishing
 

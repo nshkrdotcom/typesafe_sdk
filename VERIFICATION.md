@@ -18,7 +18,7 @@ Executed successfully:
 - `mix test --include live --warnings-as-errors`: **1 doctest, 98 tests, zero failures**.
 - `mix typesafe.record --output tmp/live --baseline test/fixtures/live`: real
   models and mixed semantic evaluation, model `jev-1.13.0`, zero retries.
-  The service supplied no request IDs; recordings retain null rather than inventing IDs.
+  Both operations retain service-issued request IDs after the cold-start wrapper fix.
 - Development evaluation: all 12 records succeeded; threshold sweep selected
   confidence 0.8 / urgency 0.5 at maximum auto-error 0.05. The frozen policy was
   applied to all eight held-out records successfully, with no model mismatch.

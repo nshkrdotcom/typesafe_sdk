@@ -9,7 +9,13 @@ Live tests pass: **1 doctest, 98 tests, zero failures**. Real recording and the
 12-record development / eight-record held-out evaluation workflow also passed.
 See [VERIFICATION.md](VERIFICATION.md) for corrections and execution details.
 
-Compatibility CI is pending the release-fix push. Publication has not occurred.
+Compatibility tests passed for Elixir/OTP **1.18.4/27.3**, **1.19.5/28.3.1**,
+and **1.20.4/29.0.6**. The complete initial-fix CI run is
+[green](https://github.com/nshkrdotcom/typesafe_sdk/actions/runs/35207775433).
+The cold-start follow-up has the same green test matrix; its quality job is
+[tracked here](https://github.com/nshkrdotcom/typesafe_sdk/actions/runs/35207892855).
+The unpacked package passed a cold-start consumer smoke test on 1.19.5/28.3.1
+with Hex runtime dependencies and no workspace bootstrap. Publication has not occurred.
 The earlier delivery-environment limitations below describe the original overlay,
 not the native QC performed in this checkout.
 
