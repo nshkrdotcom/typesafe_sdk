@@ -15,7 +15,7 @@
 
 `typesafe_sdk` is the Elixir SDK for [TypeSafe AI](https://docs.typesafe.ai/introduction) and its first System One model, **Jev**.
 
-Instead of asking a generative model to write an answer and then parsing, validating, retrying, and interpreting the resulting text, TypeSafe exposes a different primitive:
+TypeSafe evaluates structured state against typed questions and returns probabilistic answers directly:
 
 ```text
 structured state
@@ -72,9 +72,7 @@ result.answers["department"].probabilities
 result.answers["urgency"].score
 ```
 
-No prose parser, `"please answer with exactly this JSON"` prompt, or task-specific model living beside your application.
-
-The model returns the semantic values; **your Elixir code remains the program**.
+Responses return typed structs directly, without prompt engineering or JSON extraction layers.
 
 ---
 
@@ -121,7 +119,7 @@ repeat for the next question
 
 [BERT](https://aclanthology.org/N19-1423/) made pretrained language representations reusable across downstream tasks.
 
-Instead of training every NLP model from scratch, you could take a pretrained encoder and attach a task-specific output head:
+Pretrained encoders made it possible to attach task-specific output heads to shared representations:
 
 ```text
                      fine-tuning
@@ -213,7 +211,7 @@ or:
 
 TypeSafe's thesis is that there is another useful category of machine intelligence:
 
-> **Models designed from the beginning to make decisions inside software rather than generate language for humans.**
+> **Models designed to evaluate structured decisions directly inside application software.**
 
 Jev is TypeSafe's first public **System One Model**.
 
@@ -225,7 +223,7 @@ TypeSafe describes its [System One approach](https://docs.typesafe.ai/concepts/s
 * typed outputs,
 * probabilities for all three primitives, with separate confidence fields on Choice and Score answers.
 
-Instead of:
+Traditional token-generation workflow:
 
 ```text
 state
@@ -278,9 +276,7 @@ If you have:
 
 a fine-tuned encoder can be an excellent engineering solution.
 
-`typesafe_sdk` is not an argument that classifiers stopped working.
-
-The interesting difference appears when the questions belong to the **application**, not the model deployment.
+Task-specific classifiers remain well-suited for fixed taxonomies. System One applies when question criteria and label sets are defined dynamically by the application per request.
 
 Consider a system that needs all of these:
 
@@ -349,13 +345,7 @@ instruction-following LLMs
 function calling / JSON schema / structured outputs
 ```
 
-Likewise:
-
-* probability distributions are not new;
-* confidence calibration is not new;
-* discriminative models are not new;
-* typed APIs are certainly not new;
-* non-generative language understanding is not new.
+Probability distributions, confidence calibration, discriminative classification, and typed schemas are established techniques.
 
 What [TypeSafe calls a new model class](https://docs.typesafe.ai/concepts/system-one) is the **combination and optimization target**:
 
@@ -405,17 +395,9 @@ The practical distinction is the **programming model**: runtime questions with b
 
 ---
 
-# The important shift: AI becomes part of the compute graph
+# Decomposing application logic and semantic judgment
 
-The most consequential idea here may be decomposition rather than model speed.
-
-Instead of asking:
-
-```text
-"Read all of this and decide what my application should do."
-```
-
-you can separate deterministic logic from semantic judgment:
+Applications can separate deterministic logic from semantic judgment:
 
 ```text
                          ┌──────────────────────┐
@@ -443,17 +425,7 @@ you can separate deterministic logic from semantic judgment:
                          branch / route / score
 ```
 
-The model does the fuzzy part; the program does the exact part.
-
-That is a much healthier abstraction than outsourcing the entire workflow to a giant prompt.
-
-TypeSafe's [workflow guidance](https://docs.typesafe.ai/concepts/how-to-build-with-system-one) uses this decomposition: narrow semantic questions live inside a larger deterministic compute graph rather than replacing it.
-
-For Elixir developers, this should feel familiar.
-
-Small pieces and explicit data compose, while supervision and policy remain in software.
-
-Intelligence becomes another input to the program rather than the program itself.
+TypeSafe's [workflow guidance](https://docs.typesafe.ai/concepts/how-to-build-with-system-one) structures semantic questions as focused nodes within the application's broader compute graph, keeping supervision and state management in ordinary software.
 
 ---
 
@@ -803,7 +775,7 @@ even if both ultimately produce:
 billing = true
 ```
 
-TypeSafe makes uncertainty available to the application rather than hiding it behind a label.
+Answers expose probability distributions and confidence scores alongside predicted values.
 
 That enables policies such as:
 
@@ -822,19 +794,15 @@ cond do
 end
 ```
 
-The thresholds are your application's responsibility.
-
-Model confidence is evidence, not correctness.
-
-Jev can make incorrect semantic decisions even when its outputs are structurally valid.
+The thresholds are determined by your application policy. High model confidence reflects calibration, not guaranteed correctness.
 
 For Noul, use its probability directly; only Choice and Score have a separate confidence field.
 
 ---
 
-# Structured does not mean infallible
+# Semantic and structural validity
 
-There are two very different failure classes:
+There are two distinct failure classes:
 
 ```text
 1. STRUCTURAL FAILURE
@@ -846,13 +814,9 @@ There are two very different failure classes:
 "The model returned a valid value, but it was the wrong judgment."
 ```
 
-[TypeSafe describes System One](https://docs.typesafe.ai/concepts/system-one) as returning structured answers directly. The SDK still validates received data and can return a response-validation error for malformed responses.
+[TypeSafe describes System One](https://docs.typesafe.ai/concepts/system-one) as returning structured answers directly. The SDK validates received data and returns a response-validation error if payloads are malformed.
 
-It does not magically eliminate the second.
-
-That is why probabilities, confidence, evaluation, thresholds, and ordinary application policy still matter.
-
-This SDK deliberately preserves those signals rather than hiding them behind convenience booleans.
+A schema-valid response may still contain an incorrect semantic judgment. The SDK exposes probability distributions and confidence metrics so applications can evaluate calibration and enforce their own decision thresholds.
 
 ---
 
@@ -1278,15 +1242,13 @@ else
 end
 ```
 
-The SDK doesn't decide what architecture you should build.
-
-It gives that architecture a typed semantic operation; benchmark its latency for your workload.
+The SDK provides typed semantic operations that integrate into any standard OTP architecture; benchmark latency for your workload.
 
 ---
 
 # The bigger idea
 
-Software has always been very good at questions like:
+Deterministic code readily handles exact conditional checks:
 
 ```text
 Is x > 5?
@@ -1298,7 +1260,7 @@ Does this token have permission?
 Did the checksum match?
 ```
 
-It has historically been much worse at questions like:
+Qualitative semantic questions traditionally required heuristic rules, custom ML models, or unstructured generative prompts:
 
 ```text
 Does this customer sound like they are actually trying to cancel?
@@ -1312,28 +1274,7 @@ Does this explanation appear consistent with the evidence?
 How urgent is this situation?
 ```
 
-Those questions are everywhere.
-
-Until recently, they usually required either:
-
-```text
-hand-written heuristics
-task-specific ML
-human review
-or a relatively expensive generative model call
-```
-
-System One proposes another option:
-
-```text
-semantic judgment as a typed function call
-```
-
-If that abstraction holds up in production, it is not merely a faster chatbot.
-
-It is a new place to put machine intelligence inside ordinary software.
-
-`typesafe_sdk` makes that primitive native to Elixir.
+System One allows applications to express these questions as typed function calls with bounded outputs and calibrated probabilities. `typesafe_sdk` makes that primitive native to Elixir.
 
 ---
 
