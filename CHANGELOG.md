@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.2.0 - 2026-09-16
+## 0.2.0 - 2026-09-17
 
 ### Added
 
@@ -39,12 +39,14 @@
 
 ### Changed
 
+- Require Pristine ~> 0.3.1, carrying Foundation 0.2.2's supervised ETS registry
+  ownership fix and removal of unexpected `ETS-TRANSFER` logs.
 - Aligned Mix package and runtime/header version reporting at 0.2.0.
 - Strengthened known wire probability/usage validation and collision detection.
 - Added strict semantic header validation, improper-list rejection and response
   path components that preserve dotted caller IDs.
 - Retained existing legacy constructors, string-keyed system_one behavior,
-  protected headers, raw extras, retry defaults, Pristine ~> 0.3.0 and generated
+  protected headers, raw extras, retry defaults, Pristine runtime ownership and generated
   operation/schema ownership. Added telemetry as a directly used dependency.
 - Updated package/HexDocs registrations, contributor and publishing instructions,
   offline gates and target-environment handoff. Generated wire artifacts and

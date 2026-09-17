@@ -3,7 +3,7 @@
 Native release validation is recorded in [HANDOFF.md](HANDOFF.md) and
 [VERIFICATION.md](VERIFICATION.md). Confirm the final commit's CI is green.
 The commands below prepare and publish the current checkout; do not reapply the
-historical overlay. Publication has not been performed by this handoff.
+historical overlay. Check Hex before publishing an already released version.
 
 ## 1. Checkout and tooling
 
@@ -17,7 +17,7 @@ export MIX_WORKSPACE_OPS_BOOTSTRAP=/tmp/typesafe-tools.exs
 Use `.tool-versions`: Elixir 1.19.5 / OTP 28.3.1. The bootstrap exists on the
 release workstation. On another machine or after `/tmp` cleanup, recreate it
 using the pinned maintenance-tool setup in README. Only maintenance tools use
-source overrides; Pristine remains the ordinary Hex requirement `~> 0.3.0`.
+source overrides; Pristine remains the ordinary Hex requirement `~> 0.3.1`.
 Review and commit intended changes before publishing, then push and require the
 three-pair compatibility matrix and quality job to pass for that exact commit.
 
@@ -96,7 +96,8 @@ Do not overwrite an existing release tag. Verify
 if only the documentation upload failed after a successful package upload,
 retry `mix hex.publish docs` rather than replacing the package.
 
-No unrelated runtime package needs republication. Preserve the 2026-09-16
+Publish Foundation 0.2.2, then Pristine 0.3.1 before resolving this release from
+Hex. Preserve the 2026-09-17
 release date, historical changelog entries, Python provenance and dependency
 versions. The opt-in live CI schedule stays disabled until explicitly configured;
 no example or gate auto-commits captures or publishes the package.

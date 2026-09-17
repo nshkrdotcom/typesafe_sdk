@@ -18,7 +18,7 @@ runs:
       uses: actions/checkout@v4
       with:
         repository: nshkrdotcom/pristine
-        ref: c43942926d6b8dfb4bd8771b0a1cc19e3093b561
+        ref: fb117e55f2c11ba7466481478ad08f79492dc58f
         path: .tooling/pristine
         persist-credentials: false
     - name: Select maintenance tool sources

@@ -80,11 +80,8 @@ defmodule TypeSafeSDK.Test.Scenario do
     do: {:stop, :normal, state}
 
   defp registry(module) do
-    registry = module.new_registry()
-    # Keep the real Foundation adapters, but scope their state and lifetime to
-    # this fixture scenario. Self-heir tables disappear with their owner.
-    :ets.setopts(registry, {:heir, self(), :none})
-    registry
+    # Foundation 0.2.2 explicit tables have no heir and expire with this scenario.
+    module.new_registry()
   end
 
   defp capture(state, request) do

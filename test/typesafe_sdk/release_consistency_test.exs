@@ -6,7 +6,7 @@ defmodule TypeSafeSDK.ReleaseConsistencyTest do
     assert Mix.Project.config()[:version] == "0.2.0"
     assert Mix.Project.config()[:docs][:source_ref] == "v0.2.0"
     changelog = File.read!("CHANGELOG.md")
-    assert changelog =~ "## 0.2.0 - 2026-09-16"
+    assert changelog =~ "## 0.2.0 - 2026-09-17"
     assert File.read!("README.md") =~ ~s({:typesafe_sdk, "~> 0.2.0"})
 
     for path <- Path.wildcard("priv/json_schema/*.json") do

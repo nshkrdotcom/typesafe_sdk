@@ -602,7 +602,7 @@ Then:
 mix deps.get
 ```
 
-This source tree targets TypeSafeSDK 0.2.0. Use the Hex dependency above after the release is published; before publication, use a local path dependency. Pristine `~> 0.3.0` remains required; do not downgrade it to 0.2.x. Source-checkout maintenance tools need the contributor setup below. See `HANDOFF.md` for the verification and release status of this change set.
+This source tree targets TypeSafeSDK 0.2.0. The Hex dependency above selects this release. Pristine `~> 0.3.1` is required; do not downgrade it to 0.2.x. Source-checkout maintenance tools need the contributor setup below. See `HANDOFF.md` for the verification and release status of this change set.
 
 Get an API key from the [TypeSafe dashboard](https://console.typesafe.ai), following the [official quick start](https://docs.typesafe.ai/introduction/quickstart). Set `TYPESAFE_API_KEY` in your environment, then configure it in your host application's `config/runtime.exs`:
 
@@ -615,7 +615,7 @@ config :typesafe_sdk,
 
 Runtime library modules do not read operating-system environment variables themselves. Configuration enters through application config or explicit client options.
 
-The default transport is `Pristine.Adapters.Transport.Finch`, with `transport_opts: []`. With published Pristine 0.3.0, normal application startup is sufficient: a host does not need its own Finch pool or custom transport options. This was verified with a local HTTP request using the default transport.
+The default transport is `Pristine.Adapters.Transport.Finch`, with `transport_opts: []`. With Pristine 0.3.1, normal application startup is sufficient: a host does not need its own Finch pool or custom transport options. This was verified with a local HTTP request using the default transport.
 
 ---
 
@@ -988,11 +988,11 @@ total retry budget 30 seconds
 
 `TypeSafeSDK.RetryPolicy` fields are `max_retries`, `backoff_initial`, `backoff_max`, `backoff_jitter`, `http_statuses`, `respect_retry_after`, `api_connection_error`, `api_timeout_error`, and `timeout`. The three boolean flags default to `true`. The budget field `timeout` defaults to `30.0` seconds; `nil` disables that budget. The budget stops another retry when its delay would reach the budget, rather than interrupting an in-flight request.
 
-`TypeSafeSDK.RetryPolicy.to_pristine_opts/1` maps `max_retries` to Pristine's `max_attempts`. Pristine 0.3.0 passes that value to its handler as a retry count, so the default is two retries after the initial request, without an off-by-one adjustment.
+`TypeSafeSDK.RetryPolicy.to_pristine_opts/1` maps `max_retries` to Pristine's `max_attempts`. Pristine 0.3.1 passes that value to its handler as a retry count, so the default is two retries after the initial request, without an off-by-one adjustment.
 
 Client-level and per-call policies may replace the retry-status set or disable retries entirely.
 
-HTTP execution, retry classification, transport, and provider mechanics are supplied by **Pristine 0.3.0** rather than duplicated inside this SDK.
+HTTP execution, retry classification, transport, and provider mechanics are supplied by **Pristine 0.3.1** rather than duplicated inside this SDK.
 
 ---
 
@@ -1197,11 +1197,11 @@ for reviewed upstream differences, verification history, and release procedure. 
 
 ### Contributor quickstart and gates
 
-Use `.tool-versions`. Committed dependencies are ordinary Hex requirements. A checkout also needs the unpublished `pristine_codegen` and `pristine_provider_testkit` maintenance tools. [CI](https://github.com/nshkrdotcom/typesafe_sdk/blob/main/.github/workflows/ci.yml) checks out Pristine at `c43942926d6b8dfb4bd8771b0a1cc19e3093b561` and selects those tools through `MIX_WORKSPACE_OPS_BOOTSTRAP`. Reproduce that setup from the repository root:
+Use `.tool-versions`. Committed dependencies are ordinary Hex requirements. A checkout also needs the unpublished `pristine_codegen` and `pristine_provider_testkit` maintenance tools. [CI](https://github.com/nshkrdotcom/typesafe_sdk/blob/main/.github/workflows/ci.yml) checks out Pristine at `fb117e55f2c11ba7466481478ad08f79492dc58f` and selects those tools through `MIX_WORKSPACE_OPS_BOOTSTRAP`. Reproduce that setup from the repository root:
 
 ```bash
 git clone https://github.com/nshkrdotcom/pristine.git .tooling/pristine
-git -C .tooling/pristine checkout c43942926d6b8dfb4bd8771b0a1cc19e3093b561
+git -C .tooling/pristine checkout fb117e55f2c11ba7466481478ad08f79492dc58f
 cat > /tmp/typesafe-tools.exs <<'ELIXIR'
 defmodule MixWorkspaceOpsBootstrap do
   def dep(committed, project_root) do

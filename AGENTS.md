@@ -11,7 +11,7 @@
 
 ## Pristine prerequisite
 
-- `pristine ~> 0.3.0` is a hard dependency.
+- `pristine ~> 0.3.1` is a hard dependency.
 - `PREREQUISITE_PRISTINE_0.3.0.md` must be completed in the Pristine repo before
   the final TypeSafe generator/runtime QC pass.
 - Do not replace `status_retry_ranges: [%{range: 500..599, ...}]` with 100 exact
@@ -89,6 +89,6 @@ Do not call the handoff complete while any applicable gate is red.
 - Run schema verification in addition to codegen verification. Do not regenerate
   before a freshness gate just to hide pre-existing drift. Only intentional source
   edits justify regeneration; review generated diffs.
-- Release is 0.2.0, dated 2026-09-16. Historical/dependency/upstream versions are
+- Release is 0.2.0, dated 2026-09-17. Historical/dependency/upstream versions are
   not placeholders to globally replace. Do not assert publication or successful
   BEAM gates until they have actually run.

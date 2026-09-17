@@ -1,6 +1,6 @@
 # TypeSafeSDK 0.2.0 implementation docset
 
-Release date: **2026-09-16**. Baseline: **typesafe_sdk(2).xml** only.
+Release date: **2026-09-17**. Baseline: **typesafe_sdk(2).xml** only.
 
 Read SPECIFICATION.md, then IMPLEMENTATION_PLAN.md. SOURCES_AND_DECISIONS.md
 records where the ideas came from and resolves contradictions between the three

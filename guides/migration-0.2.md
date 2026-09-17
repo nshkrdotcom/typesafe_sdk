@@ -1,7 +1,7 @@
 # Migrating to 0.2.0
 
 This is additive API work, not a switch from Pristine to another HTTP client.
-The minimum runtime dependency stays Pristine ~> 0.3.0; Jason remains ~> 1.4.5.
+The minimum runtime dependency stays Pristine ~> 0.3.1; Jason remains ~> 1.4.5.
 Telemetry is now a direct dependency because the semantic API calls it directly.
 
 | Existing code | 0.2.0 behavior / optional migration |

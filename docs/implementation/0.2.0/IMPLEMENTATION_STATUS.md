@@ -1,6 +1,6 @@
 # Implementation status: TypeSafeSDK 0.2.0
 
-Release date: **2026-09-16**. The implementation uses typesafe_sdk(2).xml as its
+Release date: **2026-09-17**. The implementation uses typesafe_sdk(2).xml as its
 only baseline. The separate overlay contains the actual library changes, tests,
 schemas, CI configuration, examples, documentation and final HANDOFF.md.
 

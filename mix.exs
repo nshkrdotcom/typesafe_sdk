@@ -34,7 +34,7 @@ defmodule TypeSafeSDK.MixProject do
 
   defp deps do
     [
-      workspace_dep({:pristine, "~> 0.3.0"}),
+      workspace_dep({:pristine, "~> 0.3.1"}),
       {:jason, "~> 1.4.5"},
       {:telemetry, "~> 1.3"},
       workspace_tooling_deps(),

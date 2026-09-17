@@ -32,7 +32,7 @@ Example: dataset uniqueness/split separation; multiple acceptable labels;
 independent model/policy metrics; correct coverage/error/review denominators;
 latency quantiles; failure/token accounting; held-out sweeps rejected.
 
-Release: version/headers/docs consistent at 0.2.0; 2026-09-16 changelog entry;
+Release: version/headers/docs consistent at 0.2.0; 2026-09-17 changelog entry;
 package includes guides/examples/schema/cheatsheet; README license/artwork intact;
 no false live results or accidental dependency/upstream version rewrites.
 

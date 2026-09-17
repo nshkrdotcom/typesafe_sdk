@@ -134,6 +134,6 @@ speculative fan-out/cancellation), testing/batching/telemetry/schema/migration
 references, cheatsheet and executable examples. Register extras/package assets.
 Preserve README badge/artwork/architecture narrative and exact license ending.
 Update current version references to 0.2.0; preserve historical changelog entries
-and dependency/upstream version numbers. CHANGELOG entry date is 2026-09-16.
+and dependency/upstream version numbers. CHANGELOG entry date is 2026-09-17.
 Compatibility-matrix CI and opt-in scheduled live fixture capture/diffs are
 included. No secrets, fake recordings or auto-committing changed live outputs.

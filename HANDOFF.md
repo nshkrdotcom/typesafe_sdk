@@ -24,14 +24,14 @@ and **1.20.4/29.0.6**. The complete initial-fix CI run is
 The cold-start follow-up has the same green test matrix; its quality job is
 [tracked here](https://github.com/nshkrdotcom/typesafe_sdk/actions/runs/35207892855).
 The unpacked package passed a cold-start consumer smoke test on 1.19.5/28.3.1
-with Hex runtime dependencies and no workspace bootstrap. Publication has not occurred.
+with Hex runtime dependencies and no workspace bootstrap. That smoke test preceded publication.
 The earlier delivery-environment limitations below describe the original overlay,
 not the native QC performed in this checkout.
 
-Release date: **2026-09-16**. Base: the **97 packed files in typesafe_sdk(2).xml**.
+Release date: **2026-09-17**. Base: the **97 packed files in typesafe_sdk(2).xml**.
 Apply the overlay at that repository's root. It contains only new/modified paths;
 there are no deletions, vendored dependencies, BEAM binaries or fake live captures.
-The source version is 0.2.0; this handoff does **not** claim it is published to Hex.
+The source version is 0.2.0; consult the [Hex release](https://hex.pm/packages/typesafe_sdk/0.2.0) for publication status.
 
 Read [the specification](docs/implementation/0.2.0/SPECIFICATION.md),
 [implementation status](docs/implementation/0.2.0/IMPLEMENTATION_STATUS.md), and
@@ -76,8 +76,8 @@ green, and record exact results. Do not replace Pristine with a second runtime,
 disable assertions, or present fixture-only behavior as production support.
 
 Use the existing contributor setup in [README](README.md) for the pinned
-Pristine codegen/provider-testkit workspace bootstrap. Runtime Pristine remains
-`~> 0.3.0`; do not downgrade it. The composite CI setup preserves the baseline's
+Pristine codegen/provider-testkit workspace bootstrap. Runtime Pristine now requires
+`~> 0.3.1`; do not downgrade it. The composite CI setup preserves the baseline's
 pinned maintenance-tools revision. Keep dependency versions separate from the
 SDK version. No mix.lock was present in the supplied packed baseline; resolve
 and review dependencies according to repository release policy, not an invented
