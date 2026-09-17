@@ -28,6 +28,8 @@ Executed successfully:
 
 Corrections include formatting, compiler/type contracts, Credo refactoring,
 ExDoc link resolution, and scenario-owned Foundation backoff/breaker registries.
+Client initialization explicitly loads the response wrapper so cold-start calls
+retain HTTP/retry metadata; the focused 26-test batch/evaluation run passes.
 A regression test proves one fixture's 429 does not delay another and its
 registries disappear on close. Generated files and upstream inputs remain unchanged;
 no regeneration was used to conceal drift. Expected future-answer warning logs

@@ -128,6 +128,10 @@ defmodule TypeSafeSDK.Client do
   end
 
   defp build_context(%__MODULE__{} = client) do
+    # Pristine probes optional wrapper callbacks with function_exported?/3.
+    # Load our wrapper before the first request, including cold host startup.
+    Code.ensure_loaded!(TypeSafeSDK.TransportResponse)
+
     Pristine.foundation_context(
       auth: [Bearer.new(client.api_key)],
       base_url: client.base_url,
