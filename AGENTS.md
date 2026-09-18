@@ -54,9 +54,11 @@ For intentional upstream/codegen changes, run in this order after generation.
 For ordinary changes use the non-regenerating `scripts/check_handoff.sh`. For a
 release candidate use `scripts/release_qc.sh`: `offline`, `package-dry-run`, the
 explicitly opted-in/resumable `live` command when release policy requires real API
-evidence, then `github-ci` after the exact commit is pushed. The live driver stores
-success markers only under ignored `tmp/` so a late billable failure can resume
-without replaying already-passed steps.
+evidence, then `github-ci` after the exact commit is pushed. The release driver
+self-prepares the maintenance bootstrap from the pin in `.github/actions/setup/action.yml`
+and uses that pinned bootstrap inside the release command rather than inheriting ambient shell state. The live driver stores success markers
+only under ignored `tmp/` so a late billable failure can resume without replaying
+already-passed steps.
 
 Expanded gate order:
 

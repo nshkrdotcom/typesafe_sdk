@@ -34,19 +34,82 @@ or pushes. Upstream refresh/regeneration also remain explicit maintainer actions
 EOF
 }
 
-require_bootstrap() {
-  if [[ -z "${MIX_WORKSPACE_OPS_BOOTSTRAP:-}" || ! -f "${MIX_WORKSPACE_OPS_BOOTSTRAP}" ]]; then
-    cat >&2 <<'EOF'
-MIX_WORKSPACE_OPS_BOOTSTRAP must point to the maintenance-tool bootstrap for a
-source checkout. Reproduce the pinned setup from .github/actions/setup/action.yml
-(or the contributor section in README.md), then rerun this command.
-EOF
+maintenance_ref() {
+  sed -n \
+    '/name: Check out pinned Pristine maintenance tools/,/name: Check out prerelease Pristine runtime/p' \
+    .github/actions/setup/action.yml \
+    | sed -n 's/^[[:space:]]*ref:[[:space:]]*\([0-9a-fA-F]\{40\}\)[[:space:]]*$/\1/p' \
+    | head -n 1
+}
+
+ensure_bootstrap() {
+  local ref tooling_dir bootstrap
+  ref="$(maintenance_ref)"
+  tooling_dir=".tooling/pristine"
+  bootstrap="tmp/release-qc/${VERSION}/pristine_tools.exs"
+
+  if [[ -z "$ref" ]]; then
+    echo "Could not read the pinned Pristine maintenance ref from .github/actions/setup/action.yml" >&2
     exit 1
   fi
+
+  mkdir -p .tooling "$(dirname "$bootstrap")"
+
+  if [[ ! -d "${tooling_dir}/.git" ]]; then
+    echo "Cloning pinned Pristine maintenance tools into ${tooling_dir}..."
+    rm -rf "$tooling_dir"
+    git clone --filter=blob:none --no-checkout https://github.com/nshkrdotcom/pristine.git "$tooling_dir"
+  fi
+
+  if [[ -n "$(git -C "$tooling_dir" status --porcelain 2>/dev/null || true)" ]]; then
+    echo "${tooling_dir} has local changes; refusing to mutate maintenance tooling during release QC." >&2
+    echo "Clean or replace that ignored checkout, then rerun." >&2
+    exit 1
+  fi
+
+  if ! git -C "$tooling_dir" cat-file -e "${ref}^{commit}" 2>/dev/null; then
+    echo "Fetching pinned Pristine maintenance ref ${ref}..."
+    git -C "$tooling_dir" fetch --depth=1 origin "$ref"
+  fi
+
+  if [[ "$(git -C "$tooling_dir" rev-parse HEAD 2>/dev/null || true)" != "$ref" ]]; then
+    git -C "$tooling_dir" checkout --detach "$ref"
+  fi
+
+  cat > "$bootstrap" <<'ELIXIR'
+defmodule MixWorkspaceOpsBootstrap do
+  @tools_root Path.join(System.fetch_env!("GITHUB_WORKSPACE"), ".tooling/pristine/apps")
+
+  def dep(committed, project_root) do
+    app = elem(committed, 0)
+
+    source =
+      if app in [:pristine_codegen, :pristine_provider_testkit] do
+        Path.join(@tools_root, Atom.to_string(app))
+      end
+
+    packaging? = Enum.any?(System.argv(), &(&1 in ["hex.build", "hex.publish"]))
+
+    if source && File.dir?(source) && not packaging? do
+      opts = if tuple_size(committed) == 3, do: elem(committed, 2), else: []
+      path = Path.relative_to(source, project_root, force: true)
+      {app, Keyword.merge(opts, path: path, override: true)}
+    else
+      committed
+    end
+  end
+end
+ELIXIR
+
+  export GITHUB_WORKSPACE="$PWD"
+  export MIX_WORKSPACE_OPS_BOOTSTRAP="$PWD/$bootstrap"
+
+  echo "Prepared maintenance bootstrap from Pristine ${ref}."
+  echo "Bootstrap: ${MIX_WORKSPACE_OPS_BOOTSTRAP}"
 }
 
 run_offline() {
-  require_bootstrap
+  ensure_bootstrap
   bash -n scripts/check_handoff.sh scripts/release_qc.sh examples/run_all.sh
   git diff --check
   bash scripts/check_handoff.sh
@@ -55,7 +118,7 @@ run_offline() {
 }
 
 run_package_dry_run() {
-  require_bootstrap
+  ensure_bootstrap
 
   rm -rf "$PACKAGE_DIR"
   mix hex.build --unpack
@@ -93,7 +156,7 @@ run_once() {
 }
 
 run_live() {
-  require_bootstrap
+  ensure_bootstrap
 
   if [[ "${TYPESAFE_RELEASE_LIVE:-}" != "1" ]]; then
     cat >&2 <<'EOF'

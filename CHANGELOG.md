@@ -25,10 +25,11 @@
 - Reach architecture boundaries plus CI/handoff gates preventing handwritten pure
   semantic modules from reaching runtime/orchestration layers and runtime
   integration from reaching upward into orchestration.
-- A resumable `scripts/release_qc.sh` release driver separating non-live QC,
-  exact-artifact Hex dry-run, explicitly billable live validation and exact-SHA
-  push CI; successful live steps checkpoint under ignored `tmp/` so late failures
-  can resume without automatically replaying already-passed API calls.
+- A self-bootstrapping, resumable `scripts/release_qc.sh` release driver separating
+  non-live QC, exact-artifact Hex dry-run, explicitly billable live validation and
+  exact-SHA push CI; it derives the pinned Pristine maintenance checkout from the
+  CI setup action, while successful live steps checkpoint under ignored `tmp/` so
+  late failures can resume without automatically replaying already-passed API calls.
 - 0.4 migration, OTP integration and implementation-record documentation; Jev is
   credited in README for the OTP/recursive/telemetry/architecture inspiration.
 

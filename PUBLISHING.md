@@ -13,9 +13,11 @@ billable live calls when no runtime/example behavior changed, but it does requir
 non-live QC, a rebuilt package/docs dry run when packaged files changed, and the
 normal push-triggered CI for the exact final commit.
 
-For checkout maintenance commands, use the bootstrap defined by
+For checkout maintenance commands, the source of truth is
 `.github/actions/setup/action.yml`, whose maintenance checkout is currently pinned
-to Pristine `04ba7b112413591f5cb9260f1d270bbbeb8a0630`. The unpublished
+to Pristine `04ba7b112413591f5cb9260f1d270bbbeb8a0630`. The release driver reads that pin
+and prepares `.tooling/pristine` plus an ignored bootstrap automatically, replacing
+any ambient bootstrap only inside that script process. The unpublished
 `pristine_codegen` and `pristine_provider_testkit` packages are checkout tooling;
 keep published Hex Pristine as the runtime unless intentionally testing an
 explicit prerelease source ref. Hex package dry-runs unset the workspace bootstrap.
@@ -32,6 +34,13 @@ TYPESAFE_RELEASE_LIVE=1 bash scripts/release_qc.sh live
 # commit + push intentionally, then:
 bash scripts/release_qc.sh github-ci
 ```
+
+
+Each `offline`, `package-dry-run`, or `live` invocation prepares the maintenance
+context itself: the driver clones/fetches the pinned Pristine commit under ignored
+`.tooling/pristine`, generates the bootstrap under ignored `tmp/release-qc/<version>/`,
+and exports it only inside the script process. This intentionally avoids inheriting
+a stale bootstrap from an earlier shell session.
 
 The `live` command is deliberately opt-in and billable. With retries disabled it
 has a 67-request upper bound: the documented 63-request complete example/evaluation

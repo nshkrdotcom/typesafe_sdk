@@ -114,10 +114,13 @@ and dry run before publication.
 
 After the implementation/live pass, the release process was consolidated into the
 repository-only `scripts/release_qc.sh` driver and the release documentation was
-updated to remove stale pending-QC language. These changes do not modify `lib/`,
-`codegen/`, runtime configuration, tests or executable examples. Therefore they do
-not require rebilling the live suite, but the exact documentation/procedure commit
-still requires the applicable non-live/package gates and push-triggered CI before
+updated to remove stale pending-QC language. The driver derives the pinned Pristine
+maintenance ref from `.github/actions/setup/action.yml` and self-prepares the
+ignored `.tooling` checkout/bootstrap when needed, so release QC does not depend on
+remembering an earlier shell export. These changes do not modify `lib/`, `codegen/`,
+runtime configuration, tests or executable examples. Therefore they do not require
+rebilling the live suite, but the exact documentation/procedure commit still
+requires the applicable non-live/package gates and push-triggered CI before
 publication.
 
 ## Prior finalized-baseline evidence

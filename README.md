@@ -1306,7 +1306,7 @@ for reviewed upstream differences, verification history, and release procedure. 
 
 ### Contributor quickstart and gates
 
-Use `.tool-versions`. Committed dependencies are ordinary Hex requirements. A checkout also needs the unpublished `pristine_codegen` and `pristine_provider_testkit` maintenance tools. [CI](https://github.com/nshkrdotcom/typesafe_sdk/blob/main/.github/workflows/ci.yml) checks out Pristine at `04ba7b112413591f5cb9260f1d270bbbeb8a0630` and selects those tools through `MIX_WORKSPACE_OPS_BOOTSTRAP`. Reproduce that setup from the repository root:
+Use `.tool-versions`. Committed dependencies are ordinary Hex requirements. A checkout also needs the unpublished `pristine_codegen` and `pristine_provider_testkit` maintenance tools. [CI](https://github.com/nshkrdotcom/typesafe_sdk/blob/main/.github/workflows/ci.yml) checks out Pristine at `04ba7b112413591f5cb9260f1d270bbbeb8a0630` and selects those tools through `MIX_WORKSPACE_OPS_BOOTSTRAP`. The release driver prepares this pinned checkout/bootstrap automatically for each release command. For ad hoc maintenance commands outside `scripts/release_qc.sh`, reproduce the setup manually from the repository root:
 
 ```bash
 git clone https://github.com/nshkrdotcom/pristine.git .tooling/pristine
@@ -1348,7 +1348,7 @@ For a full generator/runtime handoff, follow [AGENTS.md](https://github.com/nshk
 13. `mix typesafe.verify --project-root .`
 14. `mix hex.build --unpack`
 
-CI runs the dependency, prerequisite, generation, static/test, documentation, verification, and package gates; refresh and live tests are separate. <code>mix typesafe.prereq</code> checks runtime capabilities; refresh fetches the upstream schema and regenerates; generate uses the committed source; verify checks committed artifacts; <code>mix typesafe.ir</code> prints the compiled provider intermediate representation. Do not mark a full handoff complete with an applicable gate failing. For release work, prefer `bash scripts/release_qc.sh offline`, `package-dry-run`, the explicitly opted-in resumable `live` command, and `github-ci` rather than reconstructing the release sequence from shell history.
+CI runs the dependency, prerequisite, generation, static/test, documentation, verification, and package gates; refresh and live tests are separate. <code>mix typesafe.prereq</code> checks runtime capabilities; refresh fetches the upstream schema and regenerates; generate uses the committed source; verify checks committed artifacts; <code>mix typesafe.ir</code> prints the compiled provider intermediate representation. Do not mark a full handoff complete with an applicable gate failing. For release work, prefer `bash scripts/release_qc.sh offline`, `package-dry-run`, the explicitly opted-in resumable `live` command, and `github-ci` rather than reconstructing the release sequence from shell history. The release driver reads the maintenance pin from `.github/actions/setup/action.yml`, ensures `.tooling/pristine` is at that commit, and creates its ignored bootstrap under `tmp/release-qc/`; callers do not need to pre-export `MIX_WORKSPACE_OPS_BOOTSTRAP`.
 
 See [generation and verification](guides/generation-and-verification.md) for maintenance details.
 

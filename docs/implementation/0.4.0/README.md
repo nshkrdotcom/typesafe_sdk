@@ -64,4 +64,5 @@ No third-party provider URL/auth/model compatibility is claimed without a suppli
 and authorized deployment. See `HANDOFF.md` and `VERIFICATION.md` for executed
 evidence, `AGENT_HANDOFF_LIVE_EXAMPLES_0.4.0.md` for the completed follow-on record,
 and `PUBLISHING.md` / `scripts/release_qc.sh` for the durable release procedure.
-Publication and tagging remain separate release steps.
+The release driver self-prepares the pinned checkout-only Pristine maintenance
+tools when needed; publication and tagging remain separate release steps.
