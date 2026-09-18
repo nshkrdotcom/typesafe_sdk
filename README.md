@@ -381,12 +381,12 @@ requires task training                   no task-specific training
                       \               /
                        ▼             ▼
 
-                       SYSTEM ONE
+                         SYSTEM ONE
 
-                  arbitrary questions
-                   bounded answers
-                probabilistic outputs
-                 software-native API
+                     arbitrary questions
+                      `bounded` answers
+                    probabilistic outputs
+                     software-native API
 ```
 
 Whether “System One Model” becomes a durable new category is something the broader field will determine.
