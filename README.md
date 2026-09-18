@@ -584,7 +584,7 @@ Descriptions and instructions can also contain JSON-compatible objects or arrays
 
 # Installation
 
-Requires Elixir `~> 1.18`. The repository and CI pin Erlang/OTP 28.3.1 and Elixir 1.19.5-otp-28 in `.tool-versions`; no broader OTP test matrix is declared. The 0.4.0 release preserves the two generated API operations and layers semantic evaluation, bounded OTP integration, and richer observability on top; it does not add a provider streaming API.
+Requires Elixir `~> 1.18`.
 
 Add the dependency to your application's `mix.exs`:
 
@@ -602,9 +602,9 @@ Then:
 mix deps.get
 ```
 
-This source tree targets TypeSafeSDK 0.4.0. The Hex dependency above selects this release. Pristine `~> 0.4.0` is required; do not downgrade it to the 0.3 runtime line. Source-checkout maintenance tools need the contributor setup below. See `HANDOFF.md` for the verification and release status of this change set.
+Pristine `~> 0.4.0` is resolved automatically as the transport and runtime layer.
 
-For the default TypeSafe service, get an API key from the [TypeSafe dashboard](https://console.typesafe.ai), following the [official quick start](https://docs.typesafe.ai/introduction/quickstart). For another TypeSafe-compatible provider, use the deployment URL, credential, and model ID issued for **that provider**. Do not send one provider's credential to a guessed third-party host.
+For the default TypeSafe service, get an API key from the [TypeSafe dashboard](https://console.typesafe.ai), following the [official quick start](https://docs.typesafe.ai/introduction/quickstart). For other TypeSafe-compatible providers, use the deployment URL, credential, and model ID issued for that provider.
 
 Endpoint switching is a first-class client option:
 
@@ -617,7 +617,7 @@ client =
   )
 ```
 
-The base URL is the root **before** the generated `/v1/models` and `/v1/systemone` paths. Path prefixes are preserved. The endpoint must implement TypeSafe's operation/request/response and bearer-auth contract; an arbitrary OpenAI-compatible endpoint is not automatically compatible.
+The base URL is the root **before** the `/v1/models` and `/v1/systemone` paths. Path prefixes are preserved.
 
 For environment-driven host configuration:
 
@@ -637,50 +637,50 @@ config :typesafe_sdk,
   default_model: System.get_env("TYPESAFE_DEFAULT_MODEL", "jev-latest")
 ```
 
-A dependency's `config/runtime.exs` does not configure its host application. Runtime library modules do not read operating-system environment variables themselves; configuration enters through explicit client options or host application config. Blank/invalid explicit endpoint or model values fail rather than silently falling back to another provider.
+Configure `:typesafe_sdk` in your application's `config/runtime.exs`, or pass options explicitly to `TypeSafeSDK.new_client/1`.
 
-The default transport is `Pristine.Adapters.Transport.Finch`, with `transport_opts: []`. With Pristine 0.4.0, normal application startup is sufficient: a host does not need its own Finch pool or custom transport options. TypeSafe relies on the Pristine 0.4 transport contract for this behavior; run the real-environment gates in `HANDOFF.md` before release.
+The default transport is `Pristine.Adapters.Transport.Finch` with standard connection pooling; host applications do not need a custom Finch pool.
 
 ---
 
-# 0.4.0 OTP composition, answer telemetry, and recursive decisions
+# Semantic Evaluation API
 
-0.4.0 is additive: the generated API and Pristine runtime boundary remain unchanged.
-It adds a narrow primary-value projection, one privacy-safe telemetry event per
-validated answer, executable architecture boundaries, and an opt-in bounded OTP
-server facade.
+Define validated, typed questions and evaluate state to receive structured responses enriched with original Elixir keys, probability distributions, and provenance metadata:
 
 ```elixir
-{:ok, response} = TypeSafeSDK.evaluate(client, state, prepared)
+client = TypeSafeSDK.new_client()
 
-TypeSafeSDK.Response.values(response)
-# => %{urgent: 0.91, team: :billing, severity: 1.7}
+questions = TypeSafeSDK.prepare!(
+  urgent: TypeSafeSDK.noul("Does this need immediate attention?"),
+  team: TypeSafeSDK.choice("Which team should handle this?",
+    billing: "Invoices and payments", technical: "Failures and outages"),
+  severity: TypeSafeSDK.score("Business impact?", [
+    {"Low", "Cosmetic; a workaround exists"}, {"High", "Blocking core work"}
+  ])
+)
+
+{:ok, response} = TypeSafeSDK.evaluate(client, "Our production integration is down", questions)
+
+team = TypeSafeSDK.Response.fetch!(response, :team)
+team.choice                                  # caller atom (:billing or :technical)
+TypeSafeSDK.Answer.Choice.ranked(team)
+TypeSafeSDK.Answer.Choice.margin(team)
+TypeSafeSDK.Answer.Score.expected_level(response.answers.severity)
+TypeSafeSDK.Answer.Score.max_level(response.answers.severity)
+TypeSafeSDK.Answer.gate(team, act: 0.90, review: 0.70)
 ```
 
-`[:typesafe_sdk, :answer]` events carry only confidence/distribution shape and
-structural correlation (`answer_type`, question ordinal, model/request ID, and
-Prepared fingerprint). They do not include state, question text/IDs, selected
-labels, Noul direction, Score values, bodies, headers, credentials, or opaque OTP
-tags.
+Strict evaluation validates answers against the exact questions sent (IDs, types, selected options, distribution sums, and Score bounds). Caller keys are restored through finite registries, never by dynamically atomizing strings.
 
-For process-oriented applications, `TypeSafeSDK.OTP.Server` lets ordinary
-GenServer callbacks start semantic work without blocking the server. The host
-application supplies the `Task.Supervisor`; `max_in_flight` bounds pending work;
-Pristine still owns HTTP/retry/cancellation execution. No global SDK process is
-started.
+Prepared sets cache validated question JSON. For multi-item evaluation, `evaluate_stream` and `evaluate_many` provide bounded supervised concurrency with explicit timeout budgets. For testing, `TypeSafeSDK.Test` allows deterministic mocking while preserving serialization and validation logic.
 
-See [the 0.4 migration guide](guides/migration-0.4.md),
-[bounded OTP integration](guides/otp-server.md), and
-[recursive decision patterns](guides/recursive-decisions.md).
+See [semantic questions](guides/semantic-questions.md), [answers](guides/answers-and-confidence.md), [batching](guides/batching.md), [testing](guides/testing.md), and [evaluating decisions](guides/evaluating-decisions.md).
 
 ---
 
-# 0.3.0 runtime controls and semantic contracts
+# Runtime Controls & Contracts
 
-0.3.0 keeps the 0.2 semantic defaults and adds production controls without
-turning TypeSafe into an HTTP runtime. Pristine `~> 0.4.0` remains responsible
-for transport execution, retries, rate limiting, circuit breaking and verified
-physical unary cancellation.
+TypeSafeSDK provides production controls for request budgets, response validation, and scoped cancellation. Transport execution, retries, and connection lifecycle are handled by Pristine:
 
 ```elixir
 cancel = Pristine.Cancellation.new()
@@ -699,7 +699,7 @@ TypeSafeSDK.Response.metadata(response)
 TypeSafeSDK.Prepared.fingerprint(prepared)
 ```
 
-Inspect cancellation support without a request:
+Inspect runtime cancellation capabilities:
 
 ```elixir
 TypeSafeSDK.RuntimeCapabilities.report(client).runtime
@@ -707,86 +707,34 @@ TypeSafeSDK.RuntimeCapabilities.report(client).runtime
 # cancellation_cleanup: %{status: :supported | :unsupported | :unverified}
 ```
 
-Cancellation uses the exact `Pristine.Cancellation` token. When the configured
-Pristine transport advertises verified cancellation, the local unary HTTP
-operation is physically terminated and cleaned up. This cannot prove that the
-remote service never received or began processing the request and cannot undo
-remote side effects.
+Cancellation uses a `Pristine.Cancellation` token. When the underlying transport supports cancellation, the in-flight HTTP request is terminated and resources cleaned up.
 
-Prepared values now support `keys/1`, `put/3`, `delete/2`, `take/2` and
-`merge/2`. Every composition rebuilds through semantic validation and recomputes
-a versioned `typesafe-prepared-v1:<sha256>` fingerprint. Fingerprints cover the
-ordered semantic/wire question contract and deliberately exclude credentials,
-retry/cancellation state, concurrency and telemetry.
+Prepared values support composition via `keys/1`, `put/3`, `delete/2`, `take/2`, and `merge/2`. Each modified composition re-validates and re-computes a versioned `typesafe-prepared-v1:<sha256>` fingerprint covering the question contract.
 
-Retry maps supplied per call inherit omitted fields from the client policy;
-`retry: false` still disables retries explicitly. TypeSafe performs only this
-configuration merge—Pristine executes and classifies retries, including
-cancellation during retry waits.
-
-See [the 0.3 migration guide](guides/migration-0.3.md) and
-[runtime controls](guides/runtime-controls.md) for request-byte budgets, strict
-response contracts, batch cancellation, exact model helpers, safe metadata and
-the cancellation/replay ambiguity boundary.
+See [runtime controls](guides/runtime-controls.md) for request budgets, response contracts, batch cancellation, and metadata options.
 
 ---
 
-# The 0.2.0 semantic API
+# OTP Integration & Telemetry
 
-The wire API remains available. New integrations can use validated, ordered
-questions and receive the same public response types enriched with their original
-Elixir keys, labels, distributions and request metadata.
+For process-oriented systems, TypeSafeSDK includes primary-value projections, privacy-safe per-answer telemetry, and an opt-in bounded OTP server facade:
 
 ```elixir
-client = TypeSafeSDK.new_client()
-questions = TypeSafeSDK.prepare!(
-  urgent: TypeSafeSDK.noul("Does this need immediate attention?"),
-  team: TypeSafeSDK.choice("Which team should handle this?",
-    billing: "Invoices and payments", technical: "Failures and outages"),
-  severity: TypeSafeSDK.score("Business impact?", [
-    {"Low", "Cosmetic; a workaround exists"}, {"High", "Blocking core work"}
-  ])
-)
-{:ok, response} = TypeSafeSDK.evaluate(client, "Our production integration is down", questions)
-team = TypeSafeSDK.Response.fetch!(response, :team)
-team.choice                                  # caller atom, not an invented atom
-TypeSafeSDK.Answer.Choice.ranked(team)
-TypeSafeSDK.Answer.Choice.margin(team)
-TypeSafeSDK.Answer.Score.expected_level(response.answers.severity)
-TypeSafeSDK.Answer.Score.max_level(response.answers.severity)
-TypeSafeSDK.Answer.gate(team, act: 0.90, review: 0.70)
+{:ok, response} = TypeSafeSDK.evaluate(client, state, prepared)
+
+TypeSafeSDK.Response.values(response)
+# => %{urgent: 0.91, team: :billing, severity: 1.7}
 ```
 
-The gate thresholds above are illustrative application policy, not a calibration
-or safety guarantee. A rounded expected score need not be the most probable
-level. Choice margin and provider confidence are different quantities.
+`[:typesafe_sdk, :answer]` telemetry events carry confidence, distribution shape, and structural correlation (`answer_type`, question ordinal, model/request ID, and Prepared fingerprint) without leaking state, question text, bodies, or credentials.
 
-Strict evaluation checks the answer against the question actually sent: IDs,
-types, selected options, distribution domains/sums, Score bounds and rubric
-indices. Caller keys restore through finite registries, never by atomizing
-remote text. Unknown future answer types remain in raw data and
-`unknown_answers`; applications must handle the absence of a typed answer.
+`TypeSafeSDK.OTP.Server` allows GenServer callbacks to run semantic workloads asynchronously without blocking the server process. The host application provides a `Task.Supervisor`, with `max_in_flight` bounding concurrent work.
 
-Prepared sets cache validated question JSON. `evaluate_stream` and
-`evaluate_many` add bounded supervised concurrency, indexed results, explicit
-timeout budgets and cleanup on early halt. `TypeSafeSDK.Test` scripts actual
-transport responses while preserving production serialization/retries/decoding.
-Semantic telemetry adds model, usage and request outcomes without automatically
-exporting state, questions, bodies or credentials.
-
-The release also includes self-contained JSON Schema export/verification,
-explicit runtime-capability auditing, an opt-in live-capture workflow and a
-runnable labeled evaluation harness that separates model judgment from routing
-policy. Transport-wide queues, streaming body caps and physical cancellation
-are not fabricated SDK guarantees: missing runtime capabilities report unverified.
-
-See [migration](guides/migration-0.2.md), [semantic questions](guides/semantic-questions.md),
-[answers](guides/answers-and-confidence.md), [batching](guides/batching.md),
-[testing](guides/testing.md), and [evaluating decisions](guides/evaluating-decisions.md).
+See [bounded OTP integration](guides/otp-server.md) and [recursive decision patterns](guides/recursive-decisions.md).
 
 ---
 
-# Quick start: retained wire API
+# Low-Level Wire API (`system_one`)
 
 ```elixir
 alias TypeSafeSDK.{Choice, Noul, Score}
@@ -1044,7 +992,7 @@ Timeouts and retry backoff values use **seconds**.
 
 ### Client and application options
 
-A dependency's `config/runtime.exs` does not run in its host application. This repository's runtime config maps `TYPESAFE_API_KEY`, `TYPESAFE_BASE_URL`, `TYPESAFE_DEFAULT_MODEL`, and `TYPESAFE_LOG_LEVEL` only when this repo is the top-level project. Host applications must supply their own mappings or explicit client options.
+Host applications configure `:typesafe_sdk` in application config or pass options explicitly when creating a client.
 
 | Client option | Application key under `:typesafe_sdk` | Default / units |
 | --- | --- | --- |
@@ -1110,7 +1058,7 @@ total retry budget 30 seconds
 
 Per-call retry keyword/map values inherit omitted fields from the client policy; explicit fields win. An explicit `http_statuses` value replaces that field, and `retry: false` disables retries for the call.
 
-HTTP execution, retry classification, transport, and provider mechanics are supplied by **Pristine 0.4.0** rather than duplicated inside this SDK.
+HTTP execution, retry classification, and transport mechanics are handled by **Pristine 0.4.0**.
 
 ---
 
@@ -1221,136 +1169,40 @@ See the [complete live example catalog](examples/README.md) for endpoint compati
 
 # Tests
 
-The repository includes semantic, relational, consumer-fixture, batch-lifecycle,
-privacy, schema, evaluation-workflow, endpoint-selection, and OTP lifecycle tests.
-The complete 0.4.0 implementation/live/package release-candidate evidence is recorded
-in the [verification record](https://github.com/nshkrdotcom/typesafe_sdk/blob/main/VERIFICATION.md).
-For ordinary non-live source handoff, run `bash scripts/check_handoff.sh`. For a
-release candidate, use the repository-only resumable `scripts/release_qc.sh` procedure documented
-in [PUBLISHING.md](https://github.com/nshkrdotcom/typesafe_sdk/blob/main/PUBLISHING.md);
-it separates offline, package dry-run, explicitly billable live, and exact-push-CI
-gates so a late live-example failure can resume without replaying already-passed calls.
+The repository includes comprehensive offline test coverage spanning semantics, response structures, batch lifecycles, and OTP server operations.
 
-The standard test suite does not call the live TypeSafe API:
+Run the standard test suite:
 
 ```bash
 mix test
 ```
 
-Live tests are explicit and opt-in because evaluation requests may be billable:
+Live tests against the TypeSafe API are explicit and opt-in:
 
 ```bash
-mix test --only live
+TYPESAFE_API_KEY=your_key mix test --include live
 ```
-
-or:
-
-```bash
-mix test --include live
-```
-
-with `TYPESAFE_API_KEY` configured.
 
 ---
 
-# API provenance and generation
+# Code Generation & Repository Layout
 
-This SDK is a ground-up Elixir port of the TypeSafe Python SDK `0.6.0`, reviewed against the live TypeSafe OpenAPI schema.
+The provider wire client is generated from the TypeSafe OpenAPI specification via PristineCodegen, while higher-level semantic interfaces and OTP tooling live in handwritten Elixir modules.
 
-The committed OpenAPI snapshot was fetched from:
+Generated code lives under `lib/typesafe_sdk/generated/` and is verified in CI.
 
-```text
-https://api.typesafe.ai/openapi.json
-```
+### Repository Map
 
-on **2026-09-16**.
-
-The provider surface is generated through PristineCodegen, while Elixir-specific ergonomics live in handwritten modules. For a source checkout, first select the maintenance tools as described below; refresh intentionally and review the resulting schema and generated diffs.
-
-```bash
-mix deps.get
-mix typesafe.prereq
-mix typesafe.refresh --project-root .
-mix typesafe.generate --project-root .
-mix typesafe.verify --project-root .
-```
-
-Generated code lives under:
-
-```text
-lib/typesafe_sdk/generated/
-```
-
-and should not be edited manually.
-
-See:
-
-```text
-guides/upstream-provenance.md
-HANDOFF.md
-PUBLISHING.md
-```
-
-for reviewed upstream differences, verification history, and release procedure. Use the [provenance guide](guides/upstream-provenance.md), repository [handoff](https://github.com/nshkrdotcom/typesafe_sdk/blob/main/HANDOFF.md), and [publishing notes](https://github.com/nshkrdotcom/typesafe_sdk/blob/main/PUBLISHING.md); the latter two are not packaged HexDocs extras.
-
-### Repository map
-
-| Path | Ownership and purpose |
+| Path | Purpose |
 | --- | --- |
-| `lib/typesafe_sdk.ex`, handwritten `lib/typesafe_sdk/*.ex` | Public ergonomics, normalization, decoding, configuration |
-| `lib/typesafe_sdk/generated/` | Generator-owned; never hand-edit |
-| `codegen/` | Build/maintenance tooling, compiled only in dev/test |
-| `priv/upstream/openapi.json` | Committed generation source |
-| `priv/generated/` | Generated manifests and verification artifacts |
-| `test/`, `guides/`, `examples/` | Tests, detailed documentation, executable examples |
+| `lib/typesafe_sdk.ex`, `lib/typesafe_sdk/*.ex` | Public API, semantic contracts, OTP server, telemetry |
+| `lib/typesafe_sdk/generated/` | Generated API client modules |
+| `codegen/` | Generator tooling (excluded from Hex package) |
+| `priv/upstream/openapi.json` | Committed OpenAPI specification |
+| `priv/generated/` | Generated contract manifests |
+| `test/`, `guides/`, `examples/` | Test suites, documentation guides, executable examples |
 
-### Contributor quickstart and gates
-
-Use `.tool-versions`. Committed dependencies are ordinary Hex requirements. A checkout also needs the unpublished `pristine_codegen` and `pristine_provider_testkit` maintenance tools. [CI](https://github.com/nshkrdotcom/typesafe_sdk/blob/main/.github/workflows/ci.yml) checks out Pristine at `04ba7b112413591f5cb9260f1d270bbbeb8a0630` and selects those tools through `MIX_WORKSPACE_OPS_BOOTSTRAP`. The release driver prepares this pinned checkout/bootstrap automatically for each release command. For ad hoc maintenance commands outside `scripts/release_qc.sh`, reproduce the setup manually from the repository root:
-
-```bash
-git clone https://github.com/nshkrdotcom/pristine.git .tooling/pristine
-git -C .tooling/pristine checkout 04ba7b112413591f5cb9260f1d270bbbeb8a0630
-cat > /tmp/typesafe-tools.exs <<'ELIXIR'
-defmodule MixWorkspaceOpsBootstrap do
-  def dep(committed, project_root) do
-    app = elem(committed, 0)
-    if app in [:pristine_codegen, :pristine_provider_testkit] do
-      opts = if tuple_size(committed) == 3, do: elem(committed, 2), else: []
-      path = Path.join([project_root, ".tooling", "pristine", "apps", Atom.to_string(app)])
-      {app, Keyword.merge(opts, path: path, override: true)}
-    else
-      committed
-    end
-  end
-end
-ELIXIR
-export MIX_WORKSPACE_OPS_BOOTSTRAP=/tmp/typesafe-tools.exs
-mix deps.get
-```
-
-The bootstrap delegates eligible dependency source selection to the workspace without hardcoding sibling paths into this SDK. Host apps using the published package do not need these tools: `codegen/` is excluded from the package.
-
-For a full generator/runtime handoff, follow [AGENTS.md](https://github.com/nshkrdotcom/typesafe_sdk/blob/main/AGENTS.md) in this order:
-
-1. Resolve the required Pristine `~> 0.4.0` runtime and review its cancellation/capability contract.
-2. `mix deps.get`
-3. <code>mix typesafe.prereq</code>
-4. `mix typesafe.refresh --project-root .` when validating live upstream parity.
-5. `mix typesafe.generate --project-root .`
-6. `mix format --check-formatted`
-7. `mix compile --warnings-as-errors`
-8. `mix test`
-9. `mix test --include live` with `TYPESAFE_API_KEY` (billable service calls).
-10. `mix credo --strict`
-11. `mix dialyzer`
-12. `mix docs --warnings-as-errors`
-13. `mix typesafe.verify --project-root .`
-14. `mix hex.build --unpack`
-
-CI runs the dependency, prerequisite, generation, static/test, documentation, verification, and package gates; refresh and live tests are separate. <code>mix typesafe.prereq</code> checks runtime capabilities; refresh fetches the upstream schema and regenerates; generate uses the committed source; verify checks committed artifacts; <code>mix typesafe.ir</code> prints the compiled provider intermediate representation. Do not mark a full handoff complete with an applicable gate failing. For release work, prefer `bash scripts/release_qc.sh offline`, `package-dry-run`, the explicitly opted-in resumable `live` command, and `github-ci` rather than reconstructing the release sequence from shell history. The release driver reads the maintenance pin from `.github/actions/setup/action.yml`, ensures `.tooling/pristine` is at that commit, and creates its ignored bootstrap under `tmp/release-qc/`; callers do not need to pre-export `MIX_WORKSPACE_OPS_BOOTSTRAP`.
-
-See [generation and verification](guides/generation-and-verification.md) for maintenance details.
+For generator maintenance, upstream provenance, and contribution workflows, see [generation and verification](guides/generation-and-verification.md) and [upstream provenance](guides/upstream-provenance.md).
 
 ---
 
@@ -1389,18 +1241,7 @@ See [generation and verification](guides/generation-and-verification.md) for mai
                       └────────────────────────┘
 ```
 
-The package does **not** contain:
-
-```text
-another HTTP stack
-another retry framework
-another workflow engine
-an agent framework
-a prompt framework
-a local ML runtime
-```
-
-It is an Elixir-native interface to TypeSafe's structured inference API.
+`typesafe_sdk` provides Elixir ergonomics and semantic validation, relying on Pristine for robust HTTP transport, retries, and execution policies.
 
 ---
 
@@ -1498,19 +1339,12 @@ and held-out datasets, policy freezing, coverage/error metrics and latency/token
 
 # Acknowledgements
 
-TypeSafeSDK is an independent Elixir SDK, but its design has benefited from studying several early community implementations of the TypeSafe API:
+TypeSafeSDK is an independent Elixir SDK, designed with inspiration from early community implementations:
 
-* [mattneel/typesafe](https://github.com/mattneel/typesafe) — particularly influential around Elixir-facing response ergonomics: ranked Choice results and margins, expected versus modal Score interpretation, response lookup helpers, structured validation errors, schema export, telemetry metadata, and contract-oriented test fixtures.
-
-* [hfiguera/typesafe_ai](https://github.com/hfiguera/typesafe_ai) — particularly influential around production discipline: validating responses against the questions actually sent, treating retry/replay ambiguity explicitly, keeping telemetry privacy-safe, thinking carefully about bounded runtime behavior, and separating model evaluation from downstream application-policy evaluation.
-
-* [typesend/typesafe_ai](https://github.com/typesend/typesafe_ai) — particularly influential around the higher-level semantic programming model: ergonomic question construction, preservation of caller-supplied key identity, enriched Score semantics, prepared question sets, concurrent evaluation, application testing helpers, and uncertainty-aware decision patterns.
-
-* [dannote/jev](https://github.com/dannote/jev) — particularly influential on the 0.4.0 OTP-facing work: treating semantic decisions as supervised asynchronous process work, correlating in-flight requests with opaque tags, recursive decision workflows, per-answer telemetry, and executable architecture-boundary checks. TypeSafeSDK adapts those ideas to its existing bounded concurrency, typed response, privacy, and Pristine-runtime contracts rather than copying Jev's transport or global supervisor design.
-
-These projects approached the same newly emerging API from different directions, and the overlap between them was useful signal: an Elixir SDK should do more than reproduce the HTTP wire format. It should make typed probabilistic decisions natural to construct, inspect, validate, test, compose, and evaluate in ordinary Elixir programs.
-
-TypeSafeSDK synthesizes ideas inspired by that work into its own architecture rather than copying any of those clients wholesale. In particular, it retains its generated OpenAPI contract and [Pristine](https://github.com/nshkrdotcom/pristine)-based transport/runtime architecture while building the semantic Elixir layer on top.
+* [mattneel/typesafe](https://github.com/mattneel/typesafe) — Elixir-facing response ergonomics, ranked Choice margins, and contract fixtures.
+* [hfiguera/typesafe_ai](https://github.com/hfiguera/typesafe_ai) — Strict response validation, privacy-safe telemetry, and production runtime discipline.
+* [typesend/typesafe_ai](https://github.com/typesend/typesafe_ai) — Ergonomic question construction, prepared question sets, and decision patterns.
+* [dannote/jev](https://github.com/dannote/jev) — Supervised asynchronous process patterns, recursive workflows, and per-answer telemetry.
 
 ---
 
