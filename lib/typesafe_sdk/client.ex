@@ -67,10 +67,8 @@ defmodule TypeSafeSDK.Client do
   def new(opts \\ []) when is_list(opts) do
     api_key = resolve_required_string(opts, :api_key, nil)
 
-    base_url =
-      resolve_string(opts, :base_url, Constants.default_base_url()) |> String.trim_trailing("/")
-
-    default_model = resolve_string(opts, :model, config(:default_model, Constants.default_model()))
+    base_url = resolve_base_url(opts)
+    default_model = resolve_model(opts)
     timeout_ms = resolve_timeout_ms(opts)
     retry = resolve_retry(option_or_config(opts, :retry, %RetryPolicy{}))
     response_contract = resolve_response_contract(option_or_config(opts, :response_contract, nil))
@@ -229,18 +227,70 @@ defmodule TypeSafeSDK.Client do
     end
   end
 
-  defp resolve_string(opts, key, fallback) do
-    case option_or_config(opts, key, fallback) do
-      value when is_binary(value) ->
-        case String.trim(value) do
-          "" -> fallback
+  defp resolve_base_url(opts) do
+    opts
+    |> option_or_config(:base_url, Constants.default_base_url())
+    |> validate_base_url!()
+  end
+
+  defp validate_base_url!(value) when is_binary(value) do
+    trimmed = String.trim(value)
+
+    if trimmed == "" do
+      invalid_base_url!("base_url must not be blank")
+    end
+
+    uri = URI.parse(trimmed)
+
+    cond do
+      uri.scheme not in ["http", "https"] ->
+        invalid_base_url!("base_url must use http or https")
+
+      is_nil(uri.host) or uri.host == "" ->
+        invalid_base_url!("base_url must include a host")
+
+      not is_nil(uri.userinfo) ->
+        invalid_base_url!("base_url must not contain URL credentials")
+
+      not is_nil(uri.query) ->
+        invalid_base_url!("base_url must not contain a query string")
+
+      not is_nil(uri.fragment) ->
+        invalid_base_url!("base_url must not contain a fragment")
+
+      true ->
+        String.trim_trailing(trimmed, "/")
+    end
+  end
+
+  defp validate_base_url!(_value),
+    do: invalid_base_url!("base_url must be an http(s) URL string")
+
+  defp resolve_model(opts) do
+    # Preserve the historical (undocumented) :model application-key fallback
+    # while keeping :default_model as the documented host configuration key.
+    configured = config(:model, config(:default_model, Constants.default_model()))
+
+    value =
+      case Keyword.fetch(opts, :model) do
+        {:ok, nil} -> configured
+        {:ok, explicit} -> explicit
+        :error -> configured
+      end
+
+    case value do
+      model when is_binary(model) ->
+        case String.trim(model) do
+          "" -> raise Error.configuration("model must not be blank")
           trimmed -> trimmed
         end
 
       _ ->
-        fallback
+        raise Error.configuration("model must be a non-blank string")
     end
   end
+
+  defp invalid_base_url!(message), do: raise(Error.configuration(message))
 
   defp resolve_timeout_ms(opts) do
     cond do

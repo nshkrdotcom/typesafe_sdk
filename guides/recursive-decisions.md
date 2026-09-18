@@ -85,3 +85,15 @@ a transient GenServer when losing a turn would be unacceptable.
 the whole server, so recursive fan-out cannot silently create unlimited local
 workers. For durable or distributed workflows, use the application's existing
 workflow/supervision system and keep TypeSafeSDK as the decision primitive.
+
+## Runnable live patterns
+
+`mix run examples/live_recursive_decisions.exs` executes all five patterns above
+against the selected real endpoint: two-level hierarchical descent, two-round
+bisection, verify/repair with a shrinking candidate set, a coarse-to-fine cascade,
+and a clarifying conversation capped at two turns. The script has a hard upper
+bound of 12 API requests and reports its actual request count. No branch substitutes
+canned model outputs or a fake fallback.
+
+For recursion inside the OTP facade, `mix run examples/live_otp_server.exs` launches
+a bounded follow-up evaluation from `handle_evaluation/3`.

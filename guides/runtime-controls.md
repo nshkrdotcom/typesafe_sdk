@@ -30,3 +30,16 @@ path.
 Use `TypeSafeSDK.Response.metadata/1` and `TypeSafeSDK.Error.metadata/1` when
 instrumentation needs stable fields. Do not log the response/error struct itself
 when its raw-body fields may contain application data.
+
+## Runnable live coverage
+
+`mix run examples/live_composition_contracts.exs` exercises Prepared composition,
+fingerprints, exact model catalog helpers, strict response contracts, request-byte
+budgets, `Response.values/1`, and stable metadata against real responses.
+
+`mix run examples/live_runtime_controls.exs` exercises timeout precedence, protected
+headers/extras, capability discovery, bounded cancellation, and retry configuration.
+Its optional `TYPESAFE_EXAMPLE_RETRY=1` branch enables at most one retry and never
+forces a retryable upstream failure, so a successful response is not presented as
+proof that a retry occurred. See `examples/README.md` for endpoint selection and
+request-count bounds.

@@ -2,6 +2,7 @@ alias TypeSafeSDK.{Choice, Noul, Score}
 
 Code.require_file("support/live.exs", __DIR__)
 client = TypeSafeSDK.Examples.Live.client()
+TypeSafeSDK.Examples.Live.show_configuration(client)
 
 show = fn label, value ->
   IO.puts("\n#{label}")

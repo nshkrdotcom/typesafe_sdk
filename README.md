@@ -604,16 +604,40 @@ mix deps.get
 
 This source tree targets TypeSafeSDK 0.4.0. The Hex dependency above selects this release. Pristine `~> 0.4.0` is required; do not downgrade it to the 0.3 runtime line. Source-checkout maintenance tools need the contributor setup below. See `HANDOFF.md` for the verification and release status of this change set.
 
-Get an API key from the [TypeSafe dashboard](https://console.typesafe.ai), following the [official quick start](https://docs.typesafe.ai/introduction/quickstart). Set `TYPESAFE_API_KEY` in your environment, then configure it in your host application's `config/runtime.exs`:
+For the default TypeSafe service, get an API key from the [TypeSafe dashboard](https://console.typesafe.ai), following the [official quick start](https://docs.typesafe.ai/introduction/quickstart). For another TypeSafe-compatible provider, use the deployment URL, credential, and model ID issued for **that provider**. Do not send one provider's credential to a guessed third-party host.
+
+Endpoint switching is a first-class client option:
 
 ```elixir
+client =
+  TypeSafeSDK.new_client(
+    api_key: provider_key,
+    base_url: "https://provider.example/deployments/my-typesafe-root",
+    model: "provider-model-id"
+  )
+```
+
+The base URL is the root **before** the generated `/v1/models` and `/v1/systemone` paths. Path prefixes are preserved. The endpoint must implement TypeSafe's operation/request/response and bearer-auth contract; an arbitrary OpenAI-compatible endpoint is not automatically compatible.
+
+For environment-driven host configuration:
+
+```bash
+export TYPESAFE_API_KEY='credential-issued-for-this-endpoint'
+export TYPESAFE_BASE_URL='https://provider.example/deployments/my-typesafe-root'
+export TYPESAFE_DEFAULT_MODEL='provider-model-id'
+```
+
+```elixir
+# Your host application's config/runtime.exs
 import Config
 
 config :typesafe_sdk,
-  api_key: System.fetch_env!("TYPESAFE_API_KEY")
+  api_key: System.fetch_env!("TYPESAFE_API_KEY"),
+  base_url: System.get_env("TYPESAFE_BASE_URL", "https://api.typesafe.ai"),
+  default_model: System.get_env("TYPESAFE_DEFAULT_MODEL", "jev-latest")
 ```
 
-Runtime library modules do not read operating-system environment variables themselves. Configuration enters through application config or explicit client options.
+A dependency's `config/runtime.exs` does not configure its host application. Runtime library modules do not read operating-system environment variables themselves; configuration enters through explicit client options or host application config. Blank/invalid explicit endpoint or model values fail rather than silently falling back to another provider.
 
 The default transport is `Pristine.Adapters.Transport.Finch`, with `transport_opts: []`. With Pristine 0.4.0, normal application startup is sufficient: a host does not need its own Finch pool or custom transport options. TypeSafe relies on the Pristine 0.4 transport contract for this behavior; run the real-environment gates in `HANDOFF.md` before release.
 
@@ -830,7 +854,11 @@ result.request_id
 
 `TypeSafeSDK.SystemOneResponse.nouls/1`, `choices/1`, and `scores/1` return maps filtered by answer type. Both response modules provide `request_id!/1` and `raw_http_response!/1`, which raise a configuration error if metadata is unavailable. The corresponding fields can be `nil`; a raw HTTP response is a `%Pristine.Response{}`. `TypeSafeSDK.Response` delegates these accessors and adds `fetch/2` and `fetch!/2`, which use exact caller keys. Semantic `elapsed_ms` includes local validation and decoding; `runtime_elapsed_ms` retains Pristine timing. Batch indexes are zero-based, and errors store their index in `details.batch_index`.
 
-The API uses Bearer authentication at `https://api.typesafe.ai`: `POST /v1/systemone` evaluates questions, and `GET /v1/models` lists models. A state may be a string, object, or array.
+The official default service uses Bearer authentication at `https://api.typesafe.ai`.
+For any selected TypeSafe-compatible base URL, `POST /v1/systemone` evaluates
+questions and `GET /v1/models` lists models beneath that root (including any path
+prefix). Use the selected provider's credential and model ID. A state may be a
+string, object, or array.
 
 The default model is:
 
@@ -1021,8 +1049,8 @@ A dependency's `config/runtime.exs` does not run in its host application. This r
 | Client option | Application key under `:typesafe_sdk` | Default / units |
 | --- | --- | --- |
 | `:api_key` | `:api_key` | Required nonblank string |
-| `:base_url` | `:base_url` | `"https://api.typesafe.ai"`; trailing slash removed |
-| `:model` | `:default_model` | `"jev-latest"`; implementation also checks application key `:model` first |
+| `:base_url` | `:base_url` | `"https://api.typesafe.ai"`; validated HTTP(S) root, path prefix retained, trailing slash removed |
+| `:model` | `:default_model` | `"jev-latest"`; nonblank provider model ID |
 | `:timeout` | None | Positive seconds; default request timeout is 10 seconds |
 | `:timeout_ms` | `:timeout_ms` | `10_000` milliseconds; wins over `:timeout` |
 | `:retry` | `:retry` | Default `TypeSafeSDK.RetryPolicy`; `false` disables retries |
@@ -1034,7 +1062,7 @@ A dependency's `config/runtime.exs` does not run in its host application. This r
 | `:runtime_requirements` | None | `[]`; fail closed unless required Pristine transport capabilities are `:supported` |
 | None | `:log_level` | `:warn` |
 
-Use `:model` in client options and `:default_model` in application config. Explicit non-nil client values take precedence over config for key, URL, model, and retry. Transport options use an explicit value whenever present, including `nil`; omit them to use defaults.
+Use `:model` in client options and `:default_model` in application config. Explicit non-nil client values take precedence over config for key, URL, model, and retry. `base_url` accepts only nonblank `http`/`https` roots with a host; URL credentials, query strings, and fragments are rejected so selecting an endpoint cannot accidentally expose secrets or silently fall back. Path prefixes are retained when generated operation paths are appended. Transport options use an explicit value whenever present, including `nil`; omit them to use defaults.
 
 ### Per-call precedence
 
@@ -1152,65 +1180,54 @@ See [errors and retries](guides/errors-and-retries.md).
 
 # Request customization
 
-`extra_body` is shallow-merged last.
-
-That means it may intentionally replace fields including:
-
-```text
-state
-model
-questions
-```
+The retained low-level `system_one/4` parity surface shallow-merges `extra_body` last, so legacy callers can intentionally replace `state`, `model`, or `questions`. The strict semantic `evaluate/4` surface does **not** allow those three protected fields to be overridden through `extra_body`; use the declared `state`, Prepared questions, and `model:` option instead.
 
 `extra_headers` may add custom headers. Both it and client `headers` remove these protected names case-insensitively: `Authorization`, `Accept`, `Content-Type`, `User-Agent`, `X-TypeSafe-SDK`, `X-TypeSafe-Runtime`, and `X-TypeSafe-Retry-Count`. Extra body keys become strings; `nil` means no extra body.
+
+`mix run examples/live_runtime_controls.exs` exercises both behaviors through the real API while `test/typesafe_sdk/runtime_test.exs` asserts the exact serialized body/header contract.
 
 ---
 
 # Live examples
 
-Every runnable example in `examples/` calls `https://api.typesafe.ai`; none uses
-fixtures or an offline fallback. Set `TYPESAFE_API_KEY` in the invoking shell.
-Requests may incur charges. The examples explicitly select the live transport
-and disable automatic retries, so repeated submissions are deliberate.
+Live examples use the selected TypeSafe-compatible endpoint, not a fixed vendor URL. With no overrides, the SDK defaults remain `https://api.typesafe.ai` / `jev-latest`. To switch providers for the complete walkthrough:
 
 ```bash
-# Run the complete live walkthrough and labeled development/held-out workflow.
+export TYPESAFE_API_KEY='credential-issued-for-this-endpoint'
+export TYPESAFE_BASE_URL='https://provider.example/deployment-root'
+export TYPESAFE_DEFAULT_MODEL='provider-model-id'
 bash examples/run_all.sh
+```
 
-# Or run one topic at a time.
+Every advertised live script forces Pristine's real HTTP adapter, has no fixture/offline fallback, and prints the selected endpoint/model without printing the API key. Retries are disabled by default. The default runner has a bounded 63-request upper limit; conditional branches can use fewer calls.
+
+```bash
 mix run examples/live_evaluation.exs
 mix run examples/live_semantic.exs
+mix run examples/live_composition_contracts.exs
+mix run examples/live_runtime_controls.exs
 mix run examples/live_batching.exs
 mix run examples/live_observability.exs
 mix run examples/live_decision_patterns.exs
+mix run examples/live_otp_server.exs
+mix run examples/live_recursive_decisions.exs
 ```
 
-| Example | Coverage |
-| --- | --- |
-| Legacy evaluation | Models, retained constructors, `system_one!`, wire answers and usage |
-| Semantic evaluation | Strict tuple/bang constructors, prepared reuse, structured rubrics, caller identity, fetch/filter/raw access, ranking, margins, Score helpers and gates |
-| Batching | Ordered collection, unordered streams, input indexes, concurrency/prefetch bounds, timeout budgets and early halt |
-| Observability | Live semantic events, named handler attach/detach, nested metadata, duration conversion, capability checks and schema freshness |
-| Decision patterns | Composite scoring and supervised speculative live model lookup |
-| Labeled evaluation | Development sweep, frozen held-out policy/model, model-versus-policy metrics, coverage, errors, latency and tokens |
+The catalog maps all public 0.2-0.4 capabilities to runnable coverage and labels honest test-only exceptions such as `TypeSafeSDK.Test`, future unknown answer types, deterministic overload/race failures, codegen freshness, and architecture gates. The evaluation CLI and live recorder also accept explicit `--base-url` / `--model` overrides that win over environment defaults.
 
-See the [example catalog](examples/README.md) for setup, expected behavior,
-request counts, failure handling and feature coverage. The
-[evaluation workflow](examples/evaluation/README.md) explains dataset contracts
-and CLI options. Successful live calls do not establish global queue bounds,
-streaming response caps, physical cancellation, or calibrated accuracy.
-
-`TypeSafeSDK.Test` remains available for deterministic application tests; it is
-covered by the [testing guide](guides/testing.md), not by live example scripts.
+See the [complete live example catalog](examples/README.md) for endpoint compatibility requirements, exact request bounds, failure/cancellation semantics, and the feature matrix. The [evaluation workflow](examples/evaluation/README.md) documents dataset contracts and CLI precedence.
 
 ---
 
 # Tests
 
-0.2.0 adds semantic, relational, consumer-fixture, batch-lifecycle, privacy, schema
-and evaluation-workflow tests. Native QC and the three-version compatibility
-matrix have passed; [the verification record](https://github.com/nshkrdotcom/typesafe_sdk/blob/main/VERIFICATION.md)
-records executed checks. Run `bash scripts/check_handoff.sh` for all offline release gates.
+The repository includes semantic, relational, consumer-fixture, batch-lifecycle,
+privacy, schema, evaluation-workflow, endpoint-selection, and OTP lifecycle tests.
+The prior finalized 0.4.0 baseline passed its native QC/compatibility gates; this
+live-example/endpoint follow-on must rerun them before release. The
+[verification record](https://github.com/nshkrdotcom/typesafe_sdk/blob/main/VERIFICATION.md)
+separates prior evidence from pending follow-on checks. Run
+`bash scripts/check_handoff.sh` for the offline release gates.
 
 The standard test suite does not call the live TypeSafe API:
 

@@ -33,5 +33,31 @@ documentation and release-consistency failures. Reach source scope is explicitly
 historical artifacts. Regression coverage includes worker exceptions, pending
 status privacy and future-answer telemetry/projection behavior.
 
-See `HANDOFF.md` and `VERIFICATION.md` for gate results. Publication and tagging
-remain separate release steps.
+## Live examples and alternate-endpoint follow-on
+
+Before the same 0.4.0 release is tagged or published, a follow-on completes the
+runnable live-example catalog for the public 0.2-0.4 surface and makes alternate
+TypeSafe-compatible API roots a first-class onboarding workflow. The shared live
+helper, evaluation CLI, recorder, scheduled live capture and all-examples runner
+now honor the selected endpoint/model while retaining the real Pristine HTTP path
+and retry-disabled general examples. Handwritten client validation rejects blank
+or credential-bearing/query/fragment base URLs while retaining deployment path
+prefixes for generated `/v1/*` operations.
+
+Focused examples cover Prepared composition/fingerprints, model catalog helpers,
+strict response contracts, request-byte budgets, runtime controls/cancellation,
+all three answer telemetry families and real `TypeSafeSDK.OTP.Server` integration.
+The recursive example now executes all five documented bounded patterns. The
+example catalog distinguishes live demonstrations from guarantees that can only
+be asserted deterministically in tests/tooling.
+
+This follow-on was authored in an environment without Elixir/Erlang/Mix, so the
+prior finalized baseline evidence does not prove these additions. The target-host
+agent must rerun formatting, compilation/tests, freshness, `mix ci`, package dry
+runs and authorized live checks before committing/pushing the follow-on. No
+third-party provider URL/auth/model compatibility is claimed without a supplied
+and authorized deployment.
+
+See `HANDOFF.md`, `VERIFICATION.md`, and
+`AGENT_HANDOFF_LIVE_EXAMPLES_0.4.0.md` for gate results and the remaining QC
+sequence. Publication and tagging remain separate release steps.

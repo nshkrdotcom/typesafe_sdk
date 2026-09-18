@@ -32,6 +32,40 @@ defmodule TypeSafeSDK.ClientConfigurationTest do
     assert client.timeout_ms == 2_500
   end
 
+  test "path-prefixed base URLs are retained and normalized" do
+    client =
+      Client.new(
+        api_key: "key",
+        base_url: " https://example.test/accounts/acme/typesafe/// ",
+        model: "provider-model"
+      )
+
+    assert client.base_url == "https://example.test/accounts/acme/typesafe"
+    assert client.default_model == "provider-model"
+  end
+
+  test "explicit invalid endpoint settings fail instead of falling back" do
+    for {base_url, message} <- [
+          {"   ", ~r/base_url must not be blank/},
+          {"example.test/typesafe", ~r/base_url must use http or https/},
+          {"ftp://example.test/typesafe", ~r/base_url must use http or https/},
+          {"https:///typesafe", ~r/base_url must include a host/},
+          {"https://user:secret@example.test/typesafe", ~r/URL credentials/},
+          {"https://example.test/typesafe?token=secret", ~r/query string/},
+          {"https://example.test/typesafe#fragment", ~r/fragment/}
+        ] do
+      assert_raise TypeSafeSDK.Error, message, fn ->
+        Client.new(api_key: "key", base_url: base_url, model: "provider-model")
+      end
+    end
+  end
+
+  test "explicit blank model fails instead of selecting a different provider model" do
+    assert_raise TypeSafeSDK.Error, ~r/model must not be blank/, fn ->
+      Client.new(api_key: "key", base_url: "https://example.test", model: "   ")
+    end
+  end
+
   test "application configuration is the runtime environment boundary" do
     Application.put_env(:typesafe_sdk, :api_key, "configured")
     Application.put_env(:typesafe_sdk, :base_url, "https://configured.test/")

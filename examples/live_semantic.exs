@@ -3,6 +3,7 @@ alias TypeSafeSDK.Examples.Live
 alias TypeSafeSDK.{Answer, Question, Response}
 
 client = Live.client()
+Live.show_configuration(client)
 IO.puts("Two live semantic evaluations; reuse prepared questions across structured states.")
 
 {:ok, urgent} =

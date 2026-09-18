@@ -97,3 +97,12 @@ multi-step workflow must resume after process restart.
 `format_status/1` exposes only the inner application state plus `in_flight` and
 `max_in_flight`; client credentials, pending tags, cancellation tokens, and task
 records are not shown.
+
+## Runnable live integration
+
+Run `mix run examples/live_otp_server.exs` for a real-API integration with a
+caller-owned `Task.Supervisor`, explicit `max_in_flight`, simultaneous callers,
+opaque correlation, server/per-request option merging, typed results, private-token
+cleanup, and a bounded recursive `handle_evaluation/3` workflow. Deterministic
+saturation/failure assertions remain in `test/typesafe_sdk/otp_server_v040_test.exs`;
+the live service is never required to stay slow enough to force overload.

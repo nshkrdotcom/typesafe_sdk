@@ -2,8 +2,31 @@
 
 This runnable example measures narrow model judgments separately from application
 routing policy. It uses `TypeSafeSDK.evaluate_many`, the normal Pristine path,
-and the public semantic questions/answers. The CLI explicitly selects the live endpoint and Finch transport; no mocked
-backend or offline fallback is used. Automatic retries are disabled.
+and the public semantic questions/answers. The CLI uses the same configurable live
+endpoint/model selection as the standalone examples and always executes through the
+normal SDK/Pristine HTTP path; no mocked backend or offline fallback is used.
+Automatic retries are disabled.
+
+## Endpoint and model selection
+
+Use credentials and model IDs issued by the endpoint you select:
+
+```bash
+export TYPESAFE_API_KEY="provider-key"
+export TYPESAFE_BASE_URL="https://your-typesafe-host.example/deployment"
+export TYPESAFE_DEFAULT_MODEL="provider-model-id"
+```
+
+`TYPESAFE_BASE_URL` is the API root before the generated `/v1/models` and
+`/v1/systemone` paths; a path prefix such as `/deployment` is retained. The host
+must implement the TypeSafe operation/response contract and compatible bearer
+authentication. An arbitrary OpenAI-compatible endpoint is not automatically a
+TypeSafe-compatible endpoint.
+
+CLI `--base-url` and `--model` values win over the matching environment defaults.
+An explicit blank/invalid endpoint fails rather than silently contacting the
+default provider. Run `mix run examples/evaluation/run.exs -- --help` for the full
+option list.
 
 ## Data and commands
 
@@ -22,7 +45,7 @@ mix run examples/evaluation/run.exs -- --split held-out \
 ```
 
 Use `--dataset path.jsonl` for your own data with matching split markers. Other
-options: `--model`, `--max-concurrency`, and development-only `--confidence` /
+options: `--base-url`, `--model`, `--max-concurrency`, and development-only `--confidence` /
 `--urgency`. Thresholds are application policy, not SDK defaults. Development
 without a sweep uses illustrative 0.8 confidence / 0.85 urgency values. With a
 sweep, existing predictions are reused across the grid; no extra API requests
@@ -74,8 +97,8 @@ than presenting it as a comparable frozen-policy result.
 
 ## Run with the other live examples
 
-`bash examples/run_all.sh` runs this workflow after the semantic, batch,
-observability and decision-pattern scripts, writing reports to `tmp/examples/`.
+`bash examples/run_all.sh` runs this workflow after the focused live feature,
+OTP, observability and recursive-pattern scripts, writing reports to `tmp/examples/`.
 See [the catalog](../README.md). The CLI is `run.exs`; `evaluation.exs` is its
 supporting implementation and is not a standalone example. All requests use
 actual service responses. Fixture-based harness regression tests remain in

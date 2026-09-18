@@ -13,9 +13,15 @@
 - `TypeSafeSDK.OTP.Server`, an opt-in bounded GenServer facade for non-blocking
   semantic work using a caller-owned `Task.Supervisor`, per-server `max_in_flight`,
   typed SDK results and Pristine cancellation. No global SDK process was added.
-- Recursive-decision documentation and a live two-level descent example covering
-  hierarchical descent, bisection, verify/repair, coarse-to-fine cascades and
-  bounded clarifying loops.
+- Runnable bounded recursive-decision coverage for hierarchical descent,
+  bisection, verify/repair over shrinking candidates, coarse-to-fine cascades and
+  clarifying conversations, all driven by real responses with explicit request/
+  depth/round/turn limits.
+- Focused live examples for Prepared composition/fingerprints, exact model catalog
+  helpers, strict response contracts, request-byte budgets, timeout/retry controls,
+  Pristine cancellation, all three answer telemetry families, and a real
+  `TypeSafeSDK.OTP.Server` integration. The example catalog now maps public 0.2-0.4
+  features to live demonstrations or the appropriate deterministic test/tool gate.
 - Reach architecture boundaries plus CI/handoff gates preventing handwritten pure
   semantic modules from reaching runtime/orchestration layers and runtime
   integration from reaching upward into orchestration.
@@ -28,6 +34,13 @@
   the generated OpenAPI operations and existing Pristine runtime boundary intact.
 - `mix ci`, GitHub quality CI and `scripts/check_handoff.sh` now include
   `mix reach.check --arch --smells`.
+- Alternate TypeSafe-compatible endpoints are a first-class onboarding/example
+  workflow. Live scripts, the evaluation CLI, recorder and all-examples runner use
+  the selected base URL/model; explicit CLI/helper choices win over environment
+  defaults, and blank/invalid explicit settings fail instead of silently falling
+  back to another provider.
+- Client base URLs are validated as credential-free HTTP(S) roots while retaining
+  path prefixes for generated `/v1/*` operations.
 
 ### Fixed
 
@@ -40,10 +53,13 @@
 
 ### Verification status
 
-- Target-host compilation, tests, static analysis, documentation, schema/codegen
-  freshness and package build passed against published Pristine 0.4.0.
-- Live model listing, System One, answer telemetry and recursive decision examples
-  passed. See `VERIFICATION.md` for release QC details.
+- The prior 0.4.0 finalization at `89086c33a6c94623289aafabd18a5cb8ede8c5e3`
+  passed target-host compilation/tests/static analysis/docs/freshness/package gates
+  and its then-current live checks against published Pristine 0.4.0.
+- The live-example/endpoint follow-on above was prepared in an environment without
+  Elixir/Erlang/Mix. Its static overlay checks are recorded in `VERIFICATION.md`;
+  target-host formatting, compile/tests, full `mix ci`, package dry run and
+  authorized real live runs must be repeated for the final release commit.
 
 ## [0.3.0] - 2026-09-17
 

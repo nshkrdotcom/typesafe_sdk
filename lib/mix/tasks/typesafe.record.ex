@@ -2,10 +2,12 @@ defmodule Mix.Tasks.Typesafe.Record do
   use Mix.Task
   @shortdoc "Capture real, synthetic-input live fixtures and reviewable baseline diffs"
   @moduledoc """
-  `mix typesafe.record [--output tmp/live] [--baseline test/fixtures/live]`
+  `mix typesafe.record [--output tmp/live] [--baseline test/fixtures/live] [--base-url URL] [--model MODEL]`
 
-  Requires TYPESAFE_API_KEY. Performs two real operations (including an evaluation that may be billable)
-  with retries disabled: list models and one mixed-question evaluation over synthetic text.
+  Requires TYPESAFE_API_KEY. `--base-url` / `--model` win over the matching
+  `TYPESAFE_BASE_URL` / `TYPESAFE_DEFAULT_MODEL` environment defaults. Performs
+  two real operations (including an evaluation that may be billable) with retries
+  disabled: list models and one mixed-question evaluation over synthetic text.
   Never overwrites approved baselines, records authorization, or commits changes.
   """
   @impl true
@@ -13,7 +15,9 @@ defmodule Mix.Tasks.Typesafe.Record do
     Mix.Task.run("app.start")
 
     {opts, remaining, invalid} =
-      OptionParser.parse(args, strict: [output: :string, baseline: :string])
+      OptionParser.parse(args,
+        strict: [output: :string, baseline: :string, base_url: :string, model: :string]
+      )
 
     if remaining != [] or invalid != [], do: Mix.raise("invalid typesafe.record arguments")
     key = System.get_env("TYPESAFE_API_KEY")
@@ -28,7 +32,13 @@ defmodule Mix.Tasks.Typesafe.Record do
       do: Mix.raise("capture output must differ from the approved baseline")
 
     File.mkdir_p!(output)
-    client = TypeSafeSDK.new_client(api_key: key, retry: false)
+
+    client_opts =
+      [api_key: key, retry: false]
+      |> maybe_put(:base_url, selected(opts, :base_url, "TYPESAFE_BASE_URL"))
+      |> maybe_put(:model, selected(opts, :model, "TYPESAFE_DEFAULT_MODEL"))
+
+    client = TypeSafeSDK.new_client(client_opts)
     models = unwrap!(TypeSafeSDK.list_models(client))
     write!(output, "models.json", models.raw)
 
@@ -65,6 +75,30 @@ defmodule Mix.Tasks.Typesafe.Record do
       "Live captures and review diffs written to #{output}; approved fixtures were not changed"
     )
   end
+
+
+  defp selected(opts, key, env_name) do
+    case Keyword.fetch(opts, key) do
+      {:ok, value} -> value
+      :error -> explicit_env(env_name)
+    end
+  end
+
+  defp explicit_env(name) do
+    case System.get_env(name) do
+      nil ->
+        nil
+
+      value ->
+        case String.trim(value) do
+          "" -> Mix.raise("#{name} is set but blank; unset it or provide an explicit value")
+          trimmed -> trimmed
+        end
+    end
+  end
+
+  defp maybe_put(opts, _key, nil), do: opts
+  defp maybe_put(opts, key, value), do: Keyword.put(opts, key, value)
 
   defp unwrap!({:ok, value}), do: value
   defp unwrap!({:error, error}), do: raise(error)

@@ -1,3 +1,5 @@
+Code.require_file("../../examples/support/live.exs", __DIR__)
+
 defmodule TypeSafeSDK.LiveTest do
   use ExUnit.Case
 
@@ -7,8 +9,11 @@ defmodule TypeSafeSDK.LiveTest do
 
   setup do
     case System.get_env("TYPESAFE_API_KEY") do
-      key when is_binary(key) and key != "" -> {:ok, client: TypeSafeSDK.new_client(api_key: key)}
-      _ -> flunk("TYPESAFE_API_KEY is required when live tests are enabled")
+      key when is_binary(key) and byte_size(key) > 0 ->
+        {:ok, client: TypeSafeSDK.Examples.Live.client()}
+
+      _ ->
+        flunk("TYPESAFE_API_KEY is required when live tests are enabled")
     end
   end
 

@@ -41,7 +41,14 @@ jobs:
         if: steps.key.outputs.present == 'true'
         env:
           TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
-        run: mix typesafe.record --output tmp/live --baseline test/fixtures/live
+          TYPESAFE_BASE_URL: ${{ vars.TYPESAFE_BASE_URL }}
+          TYPESAFE_DEFAULT_MODEL: ${{ vars.TYPESAFE_DEFAULT_MODEL }}
+        run: |
+          # Unset absent optional repository variables so executable strict-blank
+          # handling still catches genuinely supplied blank values outside CI.
+          [ -n "$TYPESAFE_BASE_URL" ] || unset TYPESAFE_BASE_URL
+          [ -n "$TYPESAFE_DEFAULT_MODEL" ] || unset TYPESAFE_DEFAULT_MODEL
+          mix typesafe.record --output tmp/live --baseline test/fixtures/live
       - uses: actions/upload-artifact@v4
         if: always() && steps.key.outputs.present == 'true'
         with:

@@ -6,14 +6,22 @@ and reports model and policy metrics separately. It is an implementation-quality
 workflow example, not a claim of benchmark performance or calibrated thresholds.
 
 ```bash
+export TYPESAFE_API_KEY="provider-key"
+export TYPESAFE_BASE_URL="https://your-typesafe-host.example/deployment"
+export TYPESAFE_DEFAULT_MODEL="provider-model-id"
+
 mix run examples/evaluation/run.exs -- --split development --sweep \
   --max-auto-error 0.05 --output tmp/triage-development.json
 mix run examples/evaluation/run.exs -- --split held-out \
   --policy tmp/triage-development.policy.json --output tmp/triage-held-out.json
 ```
 
-Configure TYPESAFE_API_KEY first. Each row causes a real evaluation. A sweep
-reuses the same predictions; it does not call the API for every threshold.
+Each row causes a real evaluation. `--base-url` / `--model` override the matching
+environment values. The base URL is the TypeSafe API root before `/v1/models` and
+`/v1/systemone`; use a key and model issued for that selected provider. A generic
+OpenAI-compatible endpoint is not sufficient unless it also implements this
+TypeSafe contract. A sweep reuses the same predictions; it does not call the API
+for every threshold.
 Development selection maximizes automatic coverage subject to the explicitly
 chosen automatic-error constraint, breaking ties deterministically. A policy is
 frozen with its observed model version when exactly one model version was seen.

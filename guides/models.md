@@ -1,6 +1,6 @@
 # Models
 
-List the models available to the account:
+List the models available from the endpoint/account selected by the client:
 
 ```elixir
 {:ok, %TypeSafeSDK.ListModelsResponse{models: models}} =
@@ -18,7 +18,9 @@ TypeSafeSDK.system_one(client, state, questions, model: "jev-latest")
 ```
 
 The evaluation response reports the model that actually handled the request;
-an alias such as `jev-latest` may resolve to a concrete version.
+an alias such as `jev-latest` may resolve to a concrete version on the official
+service. Alternate TypeSafe-compatible hosts can expose different model IDs; use a
+name returned by that host instead of assuming the default alias exists everywhere.
 
 ## Response metadata and reproducible evaluation
 
@@ -44,3 +46,8 @@ ambiguity. `latest/2` uses the structured `release_date`. Selectors can be
 predicate. Invalid dates or an objective latest-date tie fail with an
 `unordered_model_catalog` error rather than guessing from lexical or returned
 order.
+
+`mix run examples/live_composition_contracts.exs` demonstrates exact `find/2`,
+`find!/2`, and objective `latest/2` selection using the real catalog returned by the
+selected endpoint. It does not fabricate dated model names when a provider catalog
+lacks usable dates or has an ambiguous latest entry.

@@ -1,6 +1,31 @@
 # TypeSafeSDK 0.4.0 verification record
 
-Date: **2026-09-17**. Local toolchain: **Elixir 1.19.5 / OTP 28.3.1**.
+Date: **2026-09-17**.
+
+## Follow-on live-example/endpoint overlay status
+
+The prior target-host evidence below belongs to the finalized 0.4.0 baseline at
+`89086c33a6c94623289aafabd18a5cb8ede8c5e3`. A subsequent follow-on adds the
+complete live-example catalog and first-class alternate-endpoint workflow. That
+follow-on was authored in an environment with **no Elixir, Erlang or Mix runtime**.
+It therefore does not inherit the baseline's green compile/test/live/package status.
+
+Static checks performed for the follow-on include changed-path overlay comparison,
+Bash syntax for `examples/run_all.sh`, residual hardcoded-live-endpoint/fixture
+searches, generated-file diff checks, and ZIP inventory verification. No real API
+credential was used and no provider-specific Cloudflare endpoint/model/auth claim
+was fabricated.
+
+The next target-host agent must run the maintenance bootstrap from
+`.github/actions/setup/action.yml`, focused endpoint/example/OTP tests,
+`scripts/check_handoff.sh`, schema and codegen verification, full `mix ci`, Hex
+package/unpacked docs dry-run checks, then authorized live examples. Record the
+actual results here before committing/pushing the follow-on branch. Do not publish
+or tag during that QC pass. See `AGENT_HANDOFF_LIVE_EXAMPLES_0.4.0.md`.
+
+## Prior finalized-baseline evidence
+
+Local toolchain for the evidence below: **Elixir 1.19.5 / OTP 28.3.1**.
 
 ## Dependency/source evidence
 

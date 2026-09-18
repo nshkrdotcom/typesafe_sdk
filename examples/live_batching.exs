@@ -2,6 +2,7 @@ Code.require_file("support/live.exs", __DIR__)
 alias TypeSafeSDK.Examples.Live
 
 client = Live.client()
+Live.show_configuration(client)
 prepared = TypeSafeSDK.prepare!(urgent: TypeSafeSDK.noul("Does this describe an active outage?"))
 
 states = [

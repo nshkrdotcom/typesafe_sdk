@@ -1,7 +1,9 @@
 # Publish TypeSafeSDK 0.4.0
 
-Target-host results are recorded in `VERIFICATION.md`. Pristine compatibility
-was verified against published Hex 0.4.0. Publication and tagging are pending.
+The prior finalized-baseline target-host results are recorded in `VERIFICATION.md`.
+The live-example/endpoint follow-on must repeat its documented BEAM/live/package
+QC before release. Pristine compatibility was previously verified against
+published Hex 0.4.0. Publication and tagging are pending.
 Require the normal push-triggered GitHub CI run for the final release commit to
 pass before publishing; do not use runtime source overrides for that release run.
 
@@ -70,7 +72,8 @@ Only after the dry run and all release gates are green:
 mix hex.publish
 # verify Hex package/docs, then return to the repository:
 cd ..
-git tag -a v0.4.0 -m "TypeSafeSDK 0.4.0"
+# Maintainer convention: plain/lightweight release tags (not -a / -s).
+git tag v0.4.0
 git push origin v0.4.0
 ```
 

@@ -3,6 +3,7 @@ Code.require_file("../support/live.exs", __DIR__)
 
 defmodule TypeSafeSDK.Examples.Evaluation.CLI do
   alias TypeSafeSDK.Examples.Evaluation, as: Eval
+  alias TypeSafeSDK.Examples.Live
 
   def run(args) do
     args = if List.first(args) == "--", do: tl(args), else: args
@@ -10,10 +11,12 @@ defmodule TypeSafeSDK.Examples.Evaluation.CLI do
     {opts, rest, invalid} =
       OptionParser.parse(args,
         strict: [
+          help: :boolean,
           split: :string,
           dataset: :string,
           output: :string,
           policy: :string,
+          base_url: :string,
           model: :string,
           sweep: :boolean,
           confidence: :float,
@@ -24,6 +27,15 @@ defmodule TypeSafeSDK.Examples.Evaluation.CLI do
       )
 
     if rest != [] or invalid != [], do: raise(ArgumentError, "unknown evaluation CLI option")
+
+    if Keyword.get(opts, :help, false) do
+      print_help()
+    else
+      run!(opts)
+    end
+  end
+
+  defp run!(opts) do
     split = Keyword.get(opts, :split, "development")
 
     unless split in ["development", "held-out"],
@@ -43,9 +55,9 @@ defmodule TypeSafeSDK.Examples.Evaluation.CLI do
          )
 
     frozen = read_policy(Keyword.get(opts, :policy))
-    model = if frozen, do: frozen["model"], else: Keyword.get(opts, :model, "jev-latest")
+    requested_model = if frozen, do: frozen["model"], else: Keyword.get(opts, :model)
 
-    if frozen && Keyword.has_key?(opts, :model) && opts[:model] != model,
+    if frozen && Keyword.has_key?(opts, :model) && opts[:model] != requested_model,
       do: raise(ArgumentError, "held-out model must match the frozen policy")
 
     # Validate all policy/capacity arguments before making billable calls.
@@ -68,7 +80,16 @@ defmodule TypeSafeSDK.Examples.Evaluation.CLI do
     directory = Path.join(__DIR__, "datasets")
     path = Keyword.get(opts, :dataset, Path.join(directory, split <> ".jsonl"))
     rows = Eval.load!(path, split)
-    client = %{TypeSafeSDK.Examples.Live.client() | default_model: model}
+
+    client_opts =
+      []
+      |> maybe_put(:base_url, Keyword.get(opts, :base_url))
+      |> maybe_put(:model, requested_model)
+
+    client = Live.client(client_opts)
+    Live.show_configuration(client)
+    model = client.default_model
+
     records = Eval.run(client, rows, max_concurrency: concurrency)
     sweep = if sweep?, do: Eval.sweep(records, split), else: []
 
@@ -133,6 +154,40 @@ defmodule TypeSafeSDK.Examples.Evaluation.CLI do
     if is_nil(metrics) or metrics["failures"] > 0 or model_mismatch, do: System.halt(1)
   end
 
+  defp print_help do
+    IO.puts("""
+    Live support-triage evaluation
+
+      mix run examples/evaluation/run.exs -- [options]
+
+    Endpoint/model selection (highest precedence first):
+      --base-url URL            TypeSafe-compatible API root for this run
+      --model MODEL             Provider model ID for development runs
+      TYPESAFE_BASE_URL         Host/environment endpoint default
+      TYPESAFE_DEFAULT_MODEL    Host/environment model default
+
+    The API root is the prefix before TypeSafe's generated /v1/models and
+    /v1/systemone paths. The selected provider must implement the TypeSafe API
+    contract and bearer-auth behavior; an arbitrary OpenAI-compatible endpoint
+    is not automatically compatible. Use a credential issued for that endpoint.
+
+    Evaluation options:
+      --split development|held-out
+      --dataset PATH
+      --output PATH
+      --policy PATH             Required for held-out; freezes the observed model
+      --sweep
+      --confidence FLOAT
+      --urgency FLOAT
+      --max-auto-error FLOAT
+      --max-concurrency INTEGER
+      --help
+
+    TYPESAFE_API_KEY is required for live execution. The CLI never falls back to
+    a different endpoint when an explicit endpoint setting is blank or invalid.
+    """)
+  end
+
   defp read_policy(nil), do: nil
 
   defp read_policy(path) do
@@ -149,6 +204,9 @@ defmodule TypeSafeSDK.Examples.Evaluation.CLI do
     File.mkdir_p!(Path.dirname(path))
     File.write!(path, Jason.encode!(value, pretty: true) <> "\n")
   end
+
+  defp maybe_put(opts, _key, nil), do: opts
+  defp maybe_put(opts, key, value), do: Keyword.put(opts, key, value)
 end
 
 TypeSafeSDK.Examples.Evaluation.CLI.run(System.argv())

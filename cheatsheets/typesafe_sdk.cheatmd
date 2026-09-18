@@ -1,5 +1,26 @@
 # TypeSafeSDK 0.4.0
 
+## Endpoint and provider selection
+{: .col-2}
+
+```bash
+export TYPESAFE_API_KEY="provider-key"
+export TYPESAFE_BASE_URL="https://your-typesafe-host.example/deployment"
+export TYPESAFE_DEFAULT_MODEL="provider-model-id"
+```
+
+```elixir
+client = TypeSafeSDK.new_client(
+  api_key: key,
+  base_url: "https://your-typesafe-host.example/deployment",
+  model: "provider-model-id"
+)
+```
+
+The base URL is the root before `/v1/models` and `/v1/systemone`; path prefixes are
+retained. Use the selected provider's key/model and TypeSafe operation contract. A
+generic OpenAI-compatible endpoint is not automatically TypeSafe-compatible.
+
 ## Client and questions
 {: .col-2}
 
@@ -74,7 +95,7 @@ Unordered results have batch_index; errors use details.batch_index. Request
 mix typesafe.schema.export
 mix typesafe.schema.verify
 mix typesafe.capabilities
-mix typesafe.record --output tmp/live
+mix typesafe.record --output tmp/live --base-url "$TYPESAFE_BASE_URL" --model "$TYPESAFE_DEFAULT_MODEL"
 mix reach.check --arch --smells
 ```
 

@@ -99,6 +99,26 @@ defmodule TypeSafeSDK.RuntimeTest do
         do: refute(actual[key] in [nil, "forged"])
   end
 
+  test "path-prefixed base URL reaches generated operations without weakening auth headers" do
+    forged = %{"authorization" => "Bearer forged", "x-typesafe-sdk" => "forged"}
+
+    {client, scenario} =
+      client([response(200)],
+        base_url: "https://example.test/accounts/acme/typesafe/",
+        headers: forged,
+        retry: false
+      )
+
+    assert {:ok, _} = TypeSafeSDK.list_models(client)
+    [request] = requests(scenario)
+
+    assert request.url == "https://example.test/accounts/acme/typesafe/v1/models"
+
+    actual = headers(request)
+    assert actual["authorization"] == "Bearer test-key"
+    refute actual["x-typesafe-sdk"] == "forged"
+  end
+
   test "default retries all 5xx and sends attempt headers only on retries" do
     {client, scenario} = client([response(529), response(599), response(200)])
     assert {:ok, _} = TypeSafeSDK.list_models(client)

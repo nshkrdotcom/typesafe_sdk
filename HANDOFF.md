@@ -5,10 +5,18 @@ Date: **2026-09-17**
 
 ## Status
 
-Target-host QC completed on 2026-09-17 with Elixir 1.19.5 / OTP 28.3.1.
-The offline gates, live tests and both requested live examples passed. See
-`VERIFICATION.md` for results and `PUBLISHING.md` for the remaining release steps.
-Hex publication and the `v0.4.0` tag are intentionally pending.
+This checkout contains a **follow-on addition to the same unreleased 0.4.0**:
+comprehensive live examples plus first-class alternate-endpoint selection. It was
+prepared in an environment without Elixir/Erlang/Mix, so the follow-on has **not**
+yet been formatted/compiled/tested on the BEAM or exercised against a live API.
+Use `AGENT_HANDOFF_LIVE_EXAMPLES_0.4.0.md` for the exact finish/QC/commit-push
+sequence.
+
+The prior finalization commit `89086c33a6c94623289aafabd18a5cb8ede8c5e3` did
+complete target-host QC on 2026-09-17 with Elixir 1.19.5 / OTP 28.3.1, including
+the then-current offline/live gates. That evidence is historical baseline evidence,
+not proof that this follow-on overlay passes. Hex publication and the `v0.4.0` tag
+remain intentionally pending.
 
 Pristine compatibility was verified against the published Hex `pristine 0.4.0`
 source, including cancellation creation/validation/watch/stop semantics, runtime
@@ -123,8 +131,11 @@ Added `guides/recursive-decisions.md` covering:
 - bounded clarifying conversations;
 - recursive OTP workflows.
 
-Added `examples/live_recursive_decisions.exs`, a two-level hierarchical descent
-using `Response.values/1`, and included it in `examples/run_all.sh`.
+`examples/live_recursive_decisions.exs` now executes all five documented patterns
+with real responses and explicit termination bounds. Additional focused live scripts
+cover 0.3 composition/contracts/runtime controls/cancellation and the 0.4 OTP facade;
+`examples/README.md` contains the feature-to-example/test coverage matrix and finite
+request-count bounds.
 
 ### 6. Jev credit
 
@@ -222,9 +233,14 @@ outside the modeled layers unless there is a clear reason to include them.
 Only after offline gates are green and with an explicit real credential:
 
 ```bash
-mix test --include live
+mix test --include live --warnings-as-errors
+mix run examples/live_composition_contracts.exs
+mix run examples/live_runtime_controls.exs
 mix run examples/live_observability.exs
+mix run examples/live_otp_server.exs
 mix run examples/live_recursive_decisions.exs
+# Full finite suite (including evaluation workflow); see examples/README.md for cost bound:
+bash examples/run_all.sh
 ```
 
 Live success does not prove calibration, transport queue bounds, or remote
@@ -251,9 +267,15 @@ Inspect the unpacked Hex package and confirm it contains the new runtime module,
 guides, examples and 0.4 implementation record, while checkout-only `.reach.exs`
 and dev/test tooling remain non-runtime concerns as intended.
 
-Do not publish or tag until all applicable gates are green. Suggested commit
-message after target-host verification:
+Do not publish or tag until all applicable gates are green. After the follow-on
+QC is green, update `VERIFICATION.md` with exact observed results, then commit and
+push the ordinary development/release branch so the normal push-triggered GitHub
+CI runs for that exact commit. Suggested follow-on commit message:
 
 ```text
-feat: add TypeSafe SDK 0.4.0 OTP composition and answer telemetry
+feat: complete 0.4 live examples and endpoint selection
 ```
+
+The follow-on authorization includes finishing QC, committing, and pushing the
+branch. It does **not** include Hex publication or creation/push of `v0.4.0`; those
+remain separate maintainer release steps after final-commit CI is green.

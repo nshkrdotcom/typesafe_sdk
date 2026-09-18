@@ -3,6 +3,7 @@ alias TypeSafeSDK.Examples.Live
 alias TypeSafeSDK.{Answer, Response}
 
 client = Live.client()
+Live.show_configuration(client)
 IO.puts("Two live evaluations: composite scoring and speculative read-only model lookup.")
 
 response =
