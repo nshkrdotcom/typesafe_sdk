@@ -88,6 +88,38 @@ compatibility beyond the TypeSafe endpoint remains intentionally unclaimed.
 - Converted recursive bisection tuple state and atom candidate state into
   JSON-safe wire values without changing internal application identity.
 
+### Push-triggered GitHub CI evidence
+
+The implementation release-candidate commit
+`a1b77fa0aca1eb53f310af4a1c282764b2283ef9` was pushed to `main`. GitHub Actions
+run `35293833582` was triggered by `push` for that exact SHA and completed with
+`success`.
+
+Successful jobs:
+
+- quality: prerequisite, format, warnings-as-errors compile, strict Credo, Reach,
+  Dialyzer, warnings-as-errors docs, schema/codegen freshness and Hex package build;
+- Elixir 1.18.4 / OTP 27.3;
+- Elixir 1.19.5 / OTP 28.3.1; and
+- Elixir 1.20.4 / OTP 29.0.6.
+
+The checkout action emitted Node.js 20 deprecation annotations because GitHub was
+forcing `actions/checkout@v4` onto Node.js 24; those annotations did not fail a job
+or weaken any gate. Any later commit must obtain its own exact-SHA push CI evidence.
+Documentation/release-procedure-only edits do not invalidate the already-executed
+live API evidence, but packaged-document changes still require a rebuilt package
+and dry run before publication.
+
+### Post-QC release-procedure hardening
+
+After the implementation/live pass, the release process was consolidated into the
+repository-only `scripts/release_qc.sh` driver and the release documentation was
+updated to remove stale pending-QC language. These changes do not modify `lib/`,
+`codegen/`, runtime configuration, tests or executable examples. Therefore they do
+not require rebilling the live suite, but the exact documentation/procedure commit
+still requires the applicable non-live/package gates and push-triggered CI before
+publication.
+
 ## Prior finalized-baseline evidence
 
 Local toolchain for the evidence below: **Elixir 1.19.5 / OTP 28.3.1**.
@@ -160,6 +192,9 @@ non-execution after cancellation.
 
 ## Publication boundary
 
-Hex publication and creation/push of `v0.4.0` are intentionally pending.
-The normal push-triggered GitHub CI matrix must pass for the final commit before
-publication; use the exact commit's run, without runtime source-ref overrides.
+Hex publication and creation/push of `v0.4.0` are intentionally pending. The
+implementation release candidate has completed its local/live/package gates and
+exact-SHA push CI. If documentation or release-procedure changes are committed
+before publication, require non-live/package QC as applicable and push-triggered
+CI for that newer exact commit. Follow `PUBLISHING.md`; do not substitute runtime
+source overrides for the final release CI.

@@ -51,13 +51,17 @@ The recursive example now executes all five documented bounded patterns. The
 example catalog distinguishes live demonstrations from guarantees that can only
 be asserted deterministically in tests/tooling.
 
-This follow-on was authored in an environment without Elixir/Erlang/Mix, so the
-prior finalized baseline evidence does not prove these additions. The target-host
-agent must rerun formatting, compilation/tests, freshness, `mix ci`, package dry
-runs and authorized live checks before committing/pushing the follow-on. No
-third-party provider URL/auth/model compatibility is claimed without a supplied
-and authorized deployment.
+The follow-on was initially authored in an environment without Elixir/Erlang/Mix,
+but target-host finalization is now complete. The release-candidate implementation
+passed formatter/compile/tests, strict Credo, Reach, Dialyzer, warnings-as-errors
+docs, schema/codegen freshness, package build/dry-run, live-inclusive ExUnit, the
+complete live example/evaluation surface, and the normal push-triggered GitHub CI
+matrix. The live pass exposed and resolved two example-only defects: invalid
+same-pattern pinning in the OTP example and non-JSON state values in recursive
+bisection/verification.
 
-See `HANDOFF.md`, `VERIFICATION.md`, and
-`AGENT_HANDOFF_LIVE_EXAMPLES_0.4.0.md` for gate results and the remaining QC
-sequence. Publication and tagging remain separate release steps.
+No third-party provider URL/auth/model compatibility is claimed without a supplied
+and authorized deployment. See `HANDOFF.md` and `VERIFICATION.md` for executed
+evidence, `AGENT_HANDOFF_LIVE_EXAMPLES_0.4.0.md` for the completed follow-on record,
+and `PUBLISHING.md` / `scripts/release_qc.sh` for the durable release procedure.
+Publication and tagging remain separate release steps.

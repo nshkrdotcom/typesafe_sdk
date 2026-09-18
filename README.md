@@ -1223,11 +1223,13 @@ See the [complete live example catalog](examples/README.md) for endpoint compati
 
 The repository includes semantic, relational, consumer-fixture, batch-lifecycle,
 privacy, schema, evaluation-workflow, endpoint-selection, and OTP lifecycle tests.
-The prior finalized 0.4.0 baseline passed its native QC/compatibility gates; this
-live-example/endpoint follow-on must rerun them before release. The
-[verification record](https://github.com/nshkrdotcom/typesafe_sdk/blob/main/VERIFICATION.md)
-separates prior evidence from pending follow-on checks. Run
-`bash scripts/check_handoff.sh` for the offline release gates.
+The complete 0.4.0 implementation/live/package release-candidate evidence is recorded
+in the [verification record](https://github.com/nshkrdotcom/typesafe_sdk/blob/main/VERIFICATION.md).
+For ordinary non-live source handoff, run `bash scripts/check_handoff.sh`. For a
+release candidate, use the repository-only resumable `scripts/release_qc.sh` procedure documented
+in [PUBLISHING.md](https://github.com/nshkrdotcom/typesafe_sdk/blob/main/PUBLISHING.md);
+it separates offline, package dry-run, explicitly billable live, and exact-push-CI
+gates so a late live-example failure can resume without replaying already-passed calls.
 
 The standard test suite does not call the live TypeSafe API:
 
@@ -1304,11 +1306,11 @@ for reviewed upstream differences, verification history, and release procedure. 
 
 ### Contributor quickstart and gates
 
-Use `.tool-versions`. Committed dependencies are ordinary Hex requirements. A checkout also needs the unpublished `pristine_codegen` and `pristine_provider_testkit` maintenance tools. [CI](https://github.com/nshkrdotcom/typesafe_sdk/blob/main/.github/workflows/ci.yml) checks out Pristine at `fb117e55f2c11ba7466481478ad08f79492dc58f` and selects those tools through `MIX_WORKSPACE_OPS_BOOTSTRAP`. Reproduce that setup from the repository root:
+Use `.tool-versions`. Committed dependencies are ordinary Hex requirements. A checkout also needs the unpublished `pristine_codegen` and `pristine_provider_testkit` maintenance tools. [CI](https://github.com/nshkrdotcom/typesafe_sdk/blob/main/.github/workflows/ci.yml) checks out Pristine at `04ba7b112413591f5cb9260f1d270bbbeb8a0630` and selects those tools through `MIX_WORKSPACE_OPS_BOOTSTRAP`. Reproduce that setup from the repository root:
 
 ```bash
 git clone https://github.com/nshkrdotcom/pristine.git .tooling/pristine
-git -C .tooling/pristine checkout fb117e55f2c11ba7466481478ad08f79492dc58f
+git -C .tooling/pristine checkout 04ba7b112413591f5cb9260f1d270bbbeb8a0630
 cat > /tmp/typesafe-tools.exs <<'ELIXIR'
 defmodule MixWorkspaceOpsBootstrap do
   def dep(committed, project_root) do
@@ -1346,7 +1348,7 @@ For a full generator/runtime handoff, follow [AGENTS.md](https://github.com/nshk
 13. `mix typesafe.verify --project-root .`
 14. `mix hex.build --unpack`
 
-CI runs the dependency, prerequisite, generation, static/test, documentation, verification, and package gates; refresh and live tests are separate. <code>mix typesafe.prereq</code> checks runtime capabilities; refresh fetches the upstream schema and regenerates; generate uses the committed source; verify checks committed artifacts; <code>mix typesafe.ir</code> prints the compiled provider intermediate representation. Do not mark a full handoff complete with an applicable gate failing.
+CI runs the dependency, prerequisite, generation, static/test, documentation, verification, and package gates; refresh and live tests are separate. <code>mix typesafe.prereq</code> checks runtime capabilities; refresh fetches the upstream schema and regenerates; generate uses the committed source; verify checks committed artifacts; <code>mix typesafe.ir</code> prints the compiled provider intermediate representation. Do not mark a full handoff complete with an applicable gate failing. For release work, prefer `bash scripts/release_qc.sh offline`, `package-dry-run`, the explicitly opted-in resumable `live` command, and `github-ci` rather than reconstructing the release sequence from shell history.
 
 See [generation and verification](guides/generation-and-verification.md) for maintenance details.
 

@@ -25,6 +25,10 @@
 - Reach architecture boundaries plus CI/handoff gates preventing handwritten pure
   semantic modules from reaching runtime/orchestration layers and runtime
   integration from reaching upward into orchestration.
+- A resumable `scripts/release_qc.sh` release driver separating non-live QC,
+  exact-artifact Hex dry-run, explicitly billable live validation and exact-SHA
+  push CI; successful live steps checkpoint under ignored `tmp/` so late failures
+  can resume without automatically replaying already-passed API calls.
 - 0.4 migration, OTP integration and implementation-record documentation; Jev is
   credited in README for the OTP/recursive/telemetry/architecture inspiration.
 
@@ -53,13 +57,18 @@
 
 ### Verification status
 
-- The prior 0.4.0 finalization at `89086c33a6c94623289aafabd18a5cb8ede8c5e3`
-  passed target-host compilation/tests/static analysis/docs/freshness/package gates
-  and its then-current live checks against published Pristine 0.4.0.
-- The live-example/endpoint follow-on above was prepared in an environment without
-  Elixir/Erlang/Mix. Its static overlay checks are recorded in `VERIFICATION.md`;
-  target-host formatting, compile/tests, full `mix ci`, package dry run and
-  authorized real live runs must be repeated for the final release commit.
+- The follow-on completed target-host formatter/compile/tests, strict Credo, Reach,
+  Dialyzer, warnings-as-errors docs, schema/codegen freshness, `mix ci`, package
+  build and unpacked Hex publication dry-run against published Pristine 0.4.0.
+- Live-inclusive ExUnit, the recorder, all standalone live examples and the
+  development/held-out evaluation workflow completed against the authorized
+  TypeSafe endpoint after two example-only defects discovered by the live run were
+  corrected and rerun.
+- Implementation commit `a1b77fa0aca1eb53f310af4a1c282764b2283ef9`
+  passed normal push-triggered GitHub CI run `35293833582` across Elixir/OTP
+  1.18.4/27.3, 1.19.5/28.3.1 and 1.20.4/29.0.6 plus the quality job. See
+  `VERIFICATION.md` for the exact evidence and `PUBLISHING.md` for final-release
+  procedure requirements after any later documentation/process-only commit.
 
 ## [0.3.0] - 2026-09-17
 

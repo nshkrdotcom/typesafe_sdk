@@ -16,5 +16,5 @@ mix typesafe.verify --project-root .
 mix hex.build --unpack
 
 # No implicit refresh, regeneration, network evaluation, publication, or commit.
-# Run intentionally after reviewing the offline results:
-# mix typesafe.record --output tmp/live
+# For full release orchestration (package dry-run, resumable opt-in live QC and
+# exact-push GitHub CI), use scripts/release_qc.sh and PUBLISHING.md.

@@ -40,9 +40,19 @@ The final package was rebuilt after all code and documentation fixes and its
 unpacked `mix hex.publish --dry-run --yes` completed successfully with workspace
 source overrides unset; no package or documentation was published.
 
-Hex publication and creation/push of `v0.4.0` remain intentionally pending.
-The final ordinary push-triggered GitHub CI run must pass for the exact release
-commit before publication. Do not publish or tag as part of this handoff.
+The implementation release-candidate commit
+`a1b77fa0aca1eb53f310af4a1c282764b2283ef9` was pushed to `main` and the normal
+push-triggered GitHub `CI` workflow passed in run `35293833582`: all three
+Elixir/OTP matrix jobs (1.18.4/27.3, 1.19.5/28.3.1, 1.20.4/29.0.6) and the quality
+job completed successfully. The Node.js-version notices emitted for
+`actions/checkout@v4` were advisory annotations, not failed release gates.
+
+Hex publication and creation/push of `v0.4.0` remain intentionally pending. The
+post-QC release procedure is now encoded in `scripts/release_qc.sh` and
+`PUBLISHING.md`. Documentation/procedure-only edits made after the live pass do
+not require another billable live run unless executable/runtime behavior changes;
+they still require non-live QC, a fresh package dry-run when package contents
+change, and push-triggered CI for the exact final commit.
 
 ## Implemented 0.4.0 features
 
