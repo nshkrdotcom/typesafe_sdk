@@ -25,8 +25,11 @@ observed_model =
 
 latest =
   case Models.latest(catalog, :all) do
-    {:ok, model} -> %{status: :ok, name: model.name, release_date: model.release_date}
-    {:error, %Error{} = error} -> %{status: :not_objectively_orderable, error: Error.metadata(error)}
+    {:ok, model} ->
+      %{status: :ok, name: model.name, release_date: model.release_date}
+
+    {:error, %Error{} = error} ->
+      %{status: :not_objectively_orderable, error: Error.metadata(error)}
   end
 
 Live.show("Live model catalog helpers", %{
@@ -108,7 +111,8 @@ Live.show("Prepared composition", %{
 
 state = %{
   subject: "Duplicate charge during an outage",
-  body: "We were charged twice while the API was unavailable. Please investigate and refund one charge."
+  body:
+    "We were charged twice while the API was unavailable. Please investigate and refund one charge."
 }
 
 # Observe the response model before enforcing exact allowed-model membership. A
@@ -184,7 +188,10 @@ Live.show("Explicit nil disables the client request-byte budget for this call", 
 
 case TypeSafeSDK.evaluate(contract_client, state, merged, max_request_bytes: 1, retry: false) do
   {:error, %Error{type: :request_too_large} = error} ->
-    Live.show("Expected local preflight rejection (no API request for this call)", Error.metadata(error))
+    Live.show(
+      "Expected local preflight rejection (no API request for this call)",
+      Error.metadata(error)
+    )
 
   other ->
     raise "Expected a local request_too_large result, got: #{inspect(other)}"

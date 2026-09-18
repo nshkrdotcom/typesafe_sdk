@@ -13,9 +13,16 @@ defmodule TypeSafeSDK.Examples.RecursivePatterns do
       product: [bug: "Broken behavior", setup: "Configuration or integration help"]
     }
 
-    broad = choose(client, state, :branch, "Which broad area best matches this request?", [billing: nil, product: nil])
+    broad =
+      choose(client, state, :branch, "Which broad area best matches this request?",
+        billing: nil,
+        product: nil
+      )
+
     leaves = Map.fetch!(tree, broad)
-    leaf = choose(client, state, :leaf, "Which narrower workflow best matches this request?", leaves)
+
+    leaf =
+      choose(client, state, :leaf, "Which narrower workflow best matches this request?", leaves)
 
     {%{branch: broad, leaf: leaf, max_depth: 2}, 2}
   end
@@ -148,8 +155,16 @@ defmodule TypeSafeSDK.Examples.RecursivePatterns do
     midpoint = div(length(chunks), 2)
     {left, right} = Enum.split(chunks, midpoint)
 
+    json_half = fn half ->
+      Enum.map(half, fn {index, passage} ->
+        %{"index" => index, "passage" => passage}
+      end)
+    end
+
     response =
-      evaluate!(client, %{query: state, left: left, right: right},
+      evaluate!(
+        client,
+        %{query: state, left: json_half.(left), right: json_half.(right)},
         left: TypeSafeSDK.noul("Does the left half contain the better match for the query?"),
         right: TypeSafeSDK.noul("Does the right half contain the better match for the query?")
       )
@@ -175,7 +190,7 @@ defmodule TypeSafeSDK.Examples.RecursivePatterns do
       )
 
     verify_response =
-      evaluate!(client, %{state: state, candidate: selection},
+      evaluate!(client, %{state: state, candidate: to_string(selection)},
         wrong: TypeSafeSDK.noul("Is the selected candidate route wrong for this request?")
       )
 

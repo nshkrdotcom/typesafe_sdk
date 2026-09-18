@@ -150,7 +150,7 @@ successful network response cannot force every error/race/future condition.
 | Runtime capability reporting/fail-closed requirements | `live_runtime_controls.exs`, `live_observability.exs` | `test/typesafe_sdk/runtime_capabilities_test.exs` |
 | Alternate endpoint/model precedence and path-prefix preservation | every live entrypoint; CLI `--base-url/--model` | `live_example_configuration_test.exs`, `client_configuration_test.exs`, `runtime_test.exs` |
 | `TypeSafeSDK.Test` fixture API | **Not live by design** | `guides/testing.md` and ExUnit. It must never masquerade as a production example. |
-| JSON Schema/codegen freshness | schema check accompanies `live_observability.exs`, but is not a network proof | `guides/json-schemas.md`, `mix typesafe.schema.verify`, `mix typesafe.verify` |
+| JSON Schema/codegen freshness | schema check accompanies `live_observability.exs`, but is not a network proof | `guides/json-schemas.md`, `mix typesafe.schema.verify`, <code>mix typesafe.verify --project-root .</code> |
 | Reach architecture boundaries | **Not a live behavior** | `mix reach.check --arch --smells`, `.reach.exs` |
 | Future unknown wire types, deterministic overload/failures/race ordering | **Cannot be honestly forced by a healthy live service** | targeted ExUnit fixtures/tests retain these guarantees |
 

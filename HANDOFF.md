@@ -5,37 +5,44 @@ Date: **2026-09-17**
 
 ## Status
 
-This checkout contains a **follow-on addition to the same unreleased 0.4.0**:
-comprehensive live examples plus first-class alternate-endpoint selection. It was
-prepared in an environment without Elixir/Erlang/Mix, so the follow-on has **not**
-yet been formatted/compiled/tested on the BEAM or exercised against a live API.
-Use `AGENT_HANDOFF_LIVE_EXAMPLES_0.4.0.md` for the exact finish/QC/commit-push
-sequence.
+The follow-on addition to the same unreleased **0.4.0** has now completed
+target-host implementation QC on 2026-09-17 using **Elixir 1.19.5 / OTP
+28.3.1**.
 
-The prior finalization commit `89086c33a6c94623289aafabd18a5cb8ede8c5e3` did
-complete target-host QC on 2026-09-17 with Elixir 1.19.5 / OTP 28.3.1, including
-the then-current offline/live gates. That evidence is historical baseline evidence,
-not proof that this follow-on overlay passes. Hex publication and the `v0.4.0` tag
-remain intentionally pending.
+The complete live-example catalog, alternate-endpoint/model selection,
+composition/contracts coverage, runtime-control/cancellation example, OTP facade
+example, recursive-decision examples, observability coverage and evaluation
+workflow have all been exercised on the target host.
 
-Pristine compatibility was verified against the published Hex `pristine 0.4.0`
-source, including cancellation creation/validation/watch/stop semantics, runtime
-capability discovery and the generated request execution path. The original
-misnamed attachment is no longer a release blocker.
+Offline release gates are green: formatter, warnings-as-errors compilation,
+**1 doctest + 146 tests with 0 failures** (2 live excluded), strict Credo,
+Reach architecture policy, Dialyzer, warnings-as-errors docs, schema freshness,
+codegen freshness, package build and `mix ci`.
 
-Maintenance tools are not yet available on Hex. Use the CI bootstrap in
-`.github/actions/setup/action.yml`, pinned to Pristine commit
-`04ba7b112413591f5cb9260f1d270bbbeb8a0630`, for `pristine_codegen` and
-`pristine_provider_testkit` only. Runtime dependencies remain published Hex
-packages; package metadata retains ordinary Hex requirements.
+Credentialed validation is also green: live-inclusive ExUnit passed
+**1 doctest + 148 tests with 0 failures**, the recorder completed without
+altering approved fixtures, the OTP and recursive examples completed against
+the real API, and the bundled synthetic development/held-out evaluations
+completed 12/12 and 8/8 requests respectively with zero execution failures.
 
-Finalization fixed cancellation watcher completion handling (which previously
-hung cleanup), private-token cleanup on worker exit, typed unsupported-cancellation
-errors, formatting/static-analysis failures, a hidden documentation link and
-release-test assumptions. Reach now explicitly analyzes `lib` and `codegen` so
-unpacked historical packages cannot shadow current modules. Added regression
-coverage checks worker exceptions, pending status privacy and future-answer
-telemetry/projection behavior.
+Two live-example defects were found and fixed during target-host QC rather than
+being hidden by fixtures: the OTP example used an illegal same-pattern pinned
+variable, and recursive bisection/verification state contained non-JSON Elixir
+values. Both were corrected at the example/application boundary and rerun live.
+
+Pristine runtime compatibility remains against published Hex `pristine 0.4.0`.
+Unpublished `pristine_codegen` and `pristine_provider_testkit` maintenance
+packages use the CI bootstrap pinned to
+`04ba7b112413591f5cb9260f1d270bbbeb8a0630`; runtime dependencies remain
+ordinary published Hex requirements.
+
+The final package was rebuilt after all code and documentation fixes and its
+unpacked `mix hex.publish --dry-run --yes` completed successfully with workspace
+source overrides unset; no package or documentation was published.
+
+Hex publication and creation/push of `v0.4.0` remain intentionally pending.
+The final ordinary push-triggered GitHub CI run must pass for the exact release
+commit before publication. Do not publish or tag as part of this handoff.
 
 ## Implemented 0.4.0 features
 

@@ -2,26 +2,91 @@
 
 Date: **2026-09-17**.
 
-## Follow-on live-example/endpoint overlay status
+## Follow-on live-example/endpoint verification
 
-The prior target-host evidence below belongs to the finalized 0.4.0 baseline at
-`89086c33a6c94623289aafabd18a5cb8ede8c5e3`. A subsequent follow-on adds the
-complete live-example catalog and first-class alternate-endpoint workflow. That
-follow-on was authored in an environment with **no Elixir, Erlang or Mix runtime**.
-It therefore does not inherit the baseline's green compile/test/live/package status.
+Target-host QC for the follow-on 0.4.0 live-example and endpoint-selection work
+completed on 2026-09-17 with **Elixir 1.19.5 / OTP 28.3.1**. The prior finalized
+baseline evidence is retained below as historical context; the results in this
+section apply to the follow-on itself.
 
-Static checks performed for the follow-on include changed-path overlay comparison,
-Bash syntax for `examples/run_all.sh`, residual hardcoded-live-endpoint/fixture
-searches, generated-file diff checks, and ZIP inventory verification. No real API
-credential was used and no provider-specific Cloudflare endpoint/model/auth claim
-was fabricated.
+The maintenance-only bootstrap used the pinned Pristine checkout
+`04ba7b112413591f5cb9260f1d270bbbeb8a0630` for unpublished codegen/testkit
+packages. Runtime resolution remained on published Hex packages, including
+`pristine 0.4.0`.
 
-The next target-host agent must run the maintenance bootstrap from
-`.github/actions/setup/action.yml`, focused endpoint/example/OTP tests,
-`scripts/check_handoff.sh`, schema and codegen verification, full `mix ci`, Hex
-package/unpacked docs dry-run checks, then authorized live examples. Record the
-actual results here before committing/pushing the follow-on branch. Do not publish
-or tag during that QC pass. See `AGENT_HANDOFF_LIVE_EXAMPLES_0.4.0.md`.
+### Follow-on offline evidence
+
+- `mix typesafe.prereq` passed against published Pristine 0.4.0.
+- Formatter output was retained and `mix format --check-formatted` passed.
+- Compilation with warnings as errors passed.
+- Offline ExUnit passed: **1 doctest, 146 tests, 0 failures, 2 live tests excluded**.
+- `mix credo --strict`: no issues.
+- `mix reach.check --arch --smells`: architecture policy passed. The existing
+  18 advisory smell findings remain non-failing and no rule was weakened.
+- `mix dialyzer`: zero errors, zero skipped warnings.
+- `mix docs --warnings-as-errors` passed after correcting one hidden-Mix-task
+  ExDoc autolink in the example catalog.
+- `mix typesafe.schema.verify`: committed wire schemas are current.
+- `mix typesafe.verify --project-root .`: generated artifacts are current.
+- `mix ci`: final aggregate offline gate passed.
+- `mix hex.build --unpack` produced the 0.4.0 package with the live example
+  catalog, guides, schemas, upstream source and implementation records.
+- The package advertises Pristine, Jason and Telemetry as runtime dependencies;
+  Reach, ExDoc, Credo, Dialyzer and maintenance tooling remain development/test
+  concerns.
+
+- The final package was rebuilt after the target-host fixes and its unpacked
+  `mix hex.publish --dry-run --yes` completed successfully with workspace source
+  overrides unset. This exercised package and documentation publication logic
+  without publishing anything.
+
+### Follow-on live evidence
+
+All live checks used the explicit TypeSafe credential only against
+`https://api.typesafe.ai`; no credential was sent to an alternate host.
+
+- `mix test --include live --warnings-as-errors` passed:
+  **1 doctest, 148 tests, 0 failures**.
+- `mix typesafe.record` completed and wrote review output under
+  `tmp/release-live/capture`; approved fixtures were not modified.
+- The live evaluation, semantic, composition/contracts, runtime-controls,
+  batching, observability and decision-pattern examples completed successfully
+  during the initial runner invocation.
+- `examples/live_otp_server.exs` then passed after correcting an example-only
+  same-pattern pinning error. Two simultaneous callers returned their matching
+  opaque correlations, caller-owned cancellation remained uncancelled, and the
+  bounded recursive callback consumed exactly two requests.
+- `examples/live_recursive_decisions.exs` passed after converting bisection and
+  verification state to JSON-safe wire values. All five documented recursive
+  patterns executed from real model responses. The observed run used **8**
+  requests against the documented hard upper bound of **12**.
+- The synthetic development evaluation completed **12 successes, 0 failures**.
+- The synthetic held-out evaluation completed **8 successes, 0 failures**.
+- Because the two example-only defects were found late in the full runner, the
+  already successful billable examples were not needlessly repeated; every
+  constituent command advertised by the runner completed successfully across
+  the initial and resumed QC commands.
+
+Observed service responses used model `jev-1.13.0` while the configured selector
+was `jev-latest`. The development/held-out metrics are evidence that the example
+workflow executed correctly on its bundled synthetic dataset; they are not
+claims of production accuracy, calibration or deployment fitness.
+
+Alternate-endpoint support was validated deterministically for configuration
+precedence, URL validation, path-prefix preservation and protected headers.
+No provider-specific alternate endpoint was supplied, so provider-specific live
+compatibility beyond the TypeSafe endpoint remains intentionally unclaimed.
+
+### Follow-on issues resolved during target-host QC
+
+- Retained formatter changes generated by the pinned target toolchain.
+- Added the missing `TypeSafeSDK.Examples.Live` alias required by strict Credo.
+- Prevented ExDoc from interpreting the hidden `mix typesafe.verify` task as a
+  module reference.
+- Replaced illegal same-pattern pinning in the OTP live example with explicit
+  correlation equality guards.
+- Converted recursive bisection tuple state and atom candidate state into
+  JSON-safe wire values without changing internal application identity.
 
 ## Prior finalized-baseline evidence
 

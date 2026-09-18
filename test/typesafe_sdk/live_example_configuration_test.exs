@@ -18,7 +18,7 @@ defmodule TypeSafeSDK.LiveExampleConfigurationTest do
       end)
 
       for {key, _value} <- Application.get_all_env(:typesafe_sdk),
-        do: Application.delete_env(:typesafe_sdk, key)
+          do: Application.delete_env(:typesafe_sdk, key)
 
       for {key, value} <- previous_app, do: Application.put_env(:typesafe_sdk, key, value)
     end)

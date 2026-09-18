@@ -100,7 +100,9 @@ try do
           ]
 
           leaked_keys = Enum.filter(forbidden, &Map.has_key?(automatic, &1))
-          if leaked_keys != [], do: raise("Automatic telemetry exposed forbidden keys: #{inspect(leaked_keys)}")
+
+          if leaked_keys != [],
+            do: raise("Automatic telemetry exposed forbidden keys: #{inspect(leaked_keys)}")
 
           duration_ms =
             case measurements[:duration] do
@@ -127,7 +129,6 @@ try do
   unless Enum.map(observed, & &1.event) == Enum.map(expected, &elem(&1, 0)) do
     raise "Semantic telemetry was not emitted in start -> answers -> stop order"
   end
-
 after
   :telemetry.detach(id)
 end

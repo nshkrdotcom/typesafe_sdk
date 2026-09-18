@@ -76,7 +76,6 @@ defmodule Mix.Tasks.Typesafe.Record do
     )
   end
 
-
   defp selected(opts, key, env_name) do
     case Keyword.fetch(opts, key) do
       {:ok, value} -> value

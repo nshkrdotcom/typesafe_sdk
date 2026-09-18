@@ -45,7 +45,8 @@ response =
 Live.show("Protected-header live call", %{
   values: Response.values(response),
   metadata: Response.metadata(response),
-  note: "The SDK strips protected header overrides before Pristine; the test seam asserts exact wire headers."
+  note:
+    "The SDK strips protected header overrides before Pristine; the test seam asserts exact wire headers."
 })
 
 case TypeSafeSDK.evaluate(client, "state", prepared,
@@ -53,7 +54,10 @@ case TypeSafeSDK.evaluate(client, "state", prepared,
        extra_body: %{model: "must-not-override-semantic-model"}
      ) do
   {:error, %Error{type: :invalid_request} = error} ->
-    Live.show("Expected strict semantic protected-field rejection (local; no request)", Error.metadata(error))
+    Live.show(
+      "Expected strict semantic protected-field rejection (local; no request)",
+      Error.metadata(error)
+    )
 
   other ->
     raise "Expected semantic extra_body protection, got: #{inspect(other)}"
@@ -79,7 +83,8 @@ legacy =
 Live.show("Legacy system_one extra_body merge path", %{
   answer_keys: Map.keys(legacy.answers),
   metadata: Response.metadata(legacy),
-  note: "Legacy system_one retains last-write-wins extra_body; semantic evaluate protects state/model/questions."
+  note:
+    "Legacy system_one retains last-write-wins extra_body; semantic evaluate protects state/model/questions."
 })
 
 capabilities = RuntimeCapabilities.report(client)
@@ -112,7 +117,10 @@ case RuntimeCapabilities.check(client, [:unary_cancellation, :cancellation_clean
 
     case outcome do
       {:ok, {:ok, completed}} ->
-        Live.show("Unary cancellation race: request legitimately completed first", Response.metadata(completed))
+        Live.show(
+          "Unary cancellation race: request legitimately completed first",
+          Response.metadata(completed)
+        )
 
       {:ok, {:error, %Error{type: :cancelled} = error}} ->
         Live.show("Unary cancellation race: local cancellation won", Error.metadata(error))
@@ -170,7 +178,8 @@ case RuntimeCapabilities.check(client, [:unary_cancellation, :cancellation_clean
           returned_results: length(results),
           input_count: 4,
           outcomes: summary,
-          note: "Once cancellation is observed, no new items are scheduled; already-started work is outcome-ambiguous remotely."
+          note:
+            "Once cancellation is observed, no new items are scheduled; already-started work is outcome-ambiguous remotely."
         })
 
       other ->
@@ -199,7 +208,9 @@ if System.get_env("TYPESAFE_EXAMPLE_RETRY") == "1" do
     note: "A successful call does not prove that a retry happened. No retryable failure is forced."
   })
 else
-  IO.puts("\nRetries stayed disabled. Set TYPESAFE_EXAMPLE_RETRY=1 to make one bounded live call with max_retries: 1.")
+  IO.puts(
+    "\nRetries stayed disabled. Set TYPESAFE_EXAMPLE_RETRY=1 to make one bounded live call with max_retries: 1."
+  )
 end
 
 IO.puts("""

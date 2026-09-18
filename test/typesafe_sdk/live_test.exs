@@ -6,11 +6,12 @@ defmodule TypeSafeSDK.LiveTest do
   @moduletag :live
 
   alias TypeSafeSDK.{Choice, Score}
+  alias TypeSafeSDK.Examples.Live
 
   setup do
     case System.get_env("TYPESAFE_API_KEY") do
       key when is_binary(key) and byte_size(key) > 0 ->
-        {:ok, client: TypeSafeSDK.Examples.Live.client()}
+        {:ok, client: Live.client()}
 
       _ ->
         flunk("TYPESAFE_API_KEY is required when live tests are enabled")

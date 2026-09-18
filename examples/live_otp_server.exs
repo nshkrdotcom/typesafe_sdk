@@ -104,7 +104,9 @@ defmodule TypeSafeSDK.Examples.LiveOTPServer do
     }
 
     GenServer.reply(from, {:ok, correlation, result, [broad_metadata, Response.metadata(response)]})
-    {:noreply, %{inner | completed: inner.completed + 1, recursive_steps: inner.recursive_steps + 1}}
+
+    {:noreply,
+     %{inner | completed: inner.completed + 1, recursive_steps: inner.recursive_steps + 1}}
   end
 
   def handle_evaluation({:error, %Error{} = error}, tag, inner) do
@@ -177,11 +179,17 @@ try do
 
   safe_completed =
     Enum.map(completed, fn
-      {correlation, {:ok, ^correlation, values, metadata}} ->
+      {correlation, {:ok, returned_correlation, values, metadata}}
+      when correlation == returned_correlation ->
         %{correlation: correlation, result: :ok, values: values, metadata: metadata}
 
-      {correlation, {:error, ^correlation, %Error{} = error}} ->
-        Live.show("OTP request failure", %{correlation: correlation, metadata: Error.metadata(error)})
+      {correlation, {:error, returned_correlation, %Error{} = error}}
+      when correlation == returned_correlation ->
+        Live.show("OTP request failure", %{
+          correlation: correlation,
+          metadata: Error.metadata(error)
+        })
+
         raise error
     end)
 
@@ -200,7 +208,8 @@ try do
   recursive =
     GenServer.call(
       server,
-      {:recursive, "recursive-1", "A duplicate charge appeared while the API integration was failing."},
+      {:recursive, "recursive-1",
+       "A duplicate charge appeared while the API integration was failing."},
       25_000
     )
 
@@ -220,12 +229,12 @@ try do
   Live.show("Application-owned server status", GenServer.call(server, :status))
 
   IO.puts("""
-The wrapper is configured with max_in_flight: 3 and a caller-owned Task.Supervisor.
-Per-request options override matching server-level evaluation options. A fast live service may
-never naturally saturate the server, so deterministic overload assertions remain in ExUnit instead
-of forcing latency. Opaque correlation values are returned with each result; callers must not infer
-identity from completion order.
-""")
+  The wrapper is configured with max_in_flight: 3 and a caller-owned Task.Supervisor.
+  Per-request options override matching server-level evaluation options. A fast live service may
+  never naturally saturate the server, so deterministic overload assertions remain in ExUnit instead
+  of forcing latency. Opaque correlation values are returned with each result; callers must not infer
+  identity from completion order.
+  """)
 after
   if Process.alive?(server), do: GenServer.stop(server, :normal, 5_000)
   if Process.alive?(task_supervisor), do: Supervisor.stop(task_supervisor, :normal, 5_000)
